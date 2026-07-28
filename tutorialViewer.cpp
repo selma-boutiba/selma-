@@ -22,6 +22,7 @@
 #include <visp3/visual_features/vpFeatureLuminance.h>
 #include <visp3/io/vpParseArgv.h>
 #include <visp3/core/vpPixelMeterConversion.h>
+#include <visp3/core/vpRobust.h>
 
 #include <visp3/robot/vpImageSimulator.h>
 #include <stdlib.h>
@@ -414,6 +415,12 @@ void init()
 	vpColVector errorI;
 	errorI.resize(76800);
 
+	// Robust M-estimation (Tukey) to down-weight occluded/outlier pixels
+	vpRobust robust;
+	vpColVector w;      // per-pixel robust weight, 1 = inlier, ~0 = outlier
+	vpMatrix Lp;        // weighted interaction matrix: Lp = diag(w) * Lsd
+	vpColVector error_p; // weighted error: error_p = diag(w) * error
+
 	// Compute the interaction matrix
 	// link the variation of image intensity to camera motion
 
@@ -525,7 +532,25 @@ void init()
 		}
 
 		sI.interaction(Lsd);
-		Hsd = Lsd.AtA();
+
+		// Robust re-weighting: compute a Tukey M-estimator weight per pixel
+		// from the current residual, then apply it to both the interaction
+		// matrix and the error so outliers (occlusions, specularities) are
+		// down-weighted in the normal equations, following Collewet & Marchand,
+		// "Photometric visual servoing", IEEE T-RO 2011.
+		w.resize(error.getRows());
+		w = 1;
+		robust.MEstimator(vpRobust::TUKEY, error, w);
+
+		Lp.resize(Lsd.getRows(), Lsd.getCols());
+		error_p.resize(error.getRows());
+		for (unsigned int i = 0; i < error.getRows(); i++) {
+			for (unsigned int j = 0; j < Lsd.getCols(); j++)
+				Lp[i][j] = w[i] * Lsd[i][j];
+			error_p[i] = w[i] * error[i];
+		}
+
+		Hsd = Lp.AtA();
 		diagHsd.eye(n);
 		for (unsigned int i = 0; i < n; i++) diagHsd[i][i] = Hsd[i][i];
 
@@ -550,7 +575,7 @@ void init()
 				H = ((mu * diagHsd) + Hsd).inverseByLU();
 			}
 			//  compute the control law
-			e = H * Lsd.t() *error;
+			e = H * Lp.t() * error_p;
 
 			v = -lambda*e;
 		}
