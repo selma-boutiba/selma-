@@ -304,15 +304,19 @@ void init()
 
 
 	vpHomogeneousMatrix cMo;
-	
-	cMo.buildFrom(0.38, -0.33, 3.7, vpMath::rad(27), vpMath::rad(-36), vpMath::rad(14));
+
+	//cMo.buildFrom(0.38, -0.33, 3.7, vpMath::rad(27), vpMath::rad(-36), vpMath::rad(14));
      //peppe//
 	//cMo.buildFrom(-0.32, -0.28, 3.5, vpMath::rad(19), vpMath::rad(-22), vpMath::rad(14));
-	///cMo.buildFrom(-3.32 ,- 2.28, 6.5, vpMath::rad(29), vpMath::rad(-32), vpMath::rad(24));
+	// Fixed: tx/ty had a stray extra leading digit (-3.32/-2.28), which put the
+	// target completely outside the camera's field of view (0% visible). The
+	// intended translation was the same order of magnitude as the line above,
+	// just paired with the farther Z=6.5 / larger rotation test case.
+	cMo.buildFrom(-0.32, -0.28, 6.5, vpMath::rad(29), vpMath::rad(-32), vpMath::rad(24));
 
 	//partial occulation
-	
-	cMo.buildFrom(0.27, -0.25, 3.20, vpMath::rad(31), vpMath::rad(-28), vpMath::rad(6));
+
+	//cMo.buildFrom(0.27, -0.25, 3.20, vpMath::rad(31), vpMath::rad(-28), vpMath::rad(6));
 	//cMo.buildFrom(-0.24, 0.26, 3.18, vpMath::rad(-29), vpMath::rad(30), vpMath::rad(-7));
 	//cMo.buildFrom(0.25, 0.28, 3.22, vpMath::rad(34), vpMath::rad(-30), vpMath::rad(5));
 	//cMo.buildFrom(-0.26, -0.22, 3.15, vpMath::rad(36), vpMath::rad(27), vpMath::rad(-6));
