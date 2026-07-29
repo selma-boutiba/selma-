@@ -117,6 +117,7 @@ void init();
 void Hermite();
 void Ihermite();
 void Idhermite();
+void computeHermiteNormalizedResidual(const vpColVector &error, vpColVector &structG, vpColVector &error_n);
 void init_visp_plot(vpPlot&);
 
 int main(int argc, const char ** argv)
@@ -421,6 +422,13 @@ void init()
 	vpMatrix Lp;        // weighted interaction matrix: Lp = diag(w) * Lsd
 	vpColVector error_p; // weighted error: error_p = diag(w) * error
 
+	// Hermite-informed heteroscedastic normalization applied before the
+	// M-estimator (see computeHermiteNormalizedResidual() below): the raw
+	// residual is rescaled by local multi-scale structure energy so the
+	// robust weighting is structure-aware instead of using one global scale.
+	vpColVector error_n; // Hermite-normalized residual, fed to MEstimator() only
+	vpColVector structG; // per-pixel local structure energy from w_h/w_v/w_d
+
 	// Compute the interaction matrix
 	// link the variation of image intensity to camera motion
 
@@ -533,14 +541,19 @@ void init()
 
 		sI.interaction(Lsd);
 
-		// Robust re-weighting: compute a Tukey M-estimator weight per pixel
-		// from the current residual, then apply it to both the interaction
-		// matrix and the error so outliers (occlusions, specularities) are
-		// down-weighted in the normal equations, following Collewet & Marchand,
-		// "Photometric visual servoing", IEEE T-RO 2011.
+		// Robust re-weighting: compute a Tukey M-estimator weight per pixel,
+		// then apply it to both the interaction matrix and the error so
+		// outliers (occlusions, specularities) are down-weighted in the
+		// normal equations, following Collewet & Marchand, "Photometric
+		// visual servoing", IEEE T-RO 2011. The residual fed to the
+		// M-estimator is first Hermite-normalized (see
+		// computeHermiteNormalizedResidual()) so the robust threshold is
+		// structure-aware instead of using one global image-wide scale.
+		computeHermiteNormalizedResidual(error, structG, error_n);
+
 		w.resize(error.getRows());
 		w = 1;
-		robust.MEstimator(vpRobust::TUKEY, error, w);
+		robust.MEstimator(vpRobust::TUKEY, error_n, w);
 
 		Lp.resize(Lsd.getRows(), Lsd.getCols());
 		error_p.resize(error.getRows());
@@ -739,6 +752,65 @@ void Idhermite() {
 	vpImageFilter::filter(dvwz, dwwz_a, Dnm1); vpImageFilter::filter(dvwz, dwwz_h, Dnm2); vpImageFilter::filter(dvwz, dwwz_v, Dnm3); vpImageFilter::filter(dvwz, dwwz_d, Dnm4);
 }
 
+// Hermite-informed heteroscedastic residual normalization.
+//
+// A plain M-estimator (Tukey) judges every pixel's residual against one
+// global scale (its MAD over the whole image). That is blind to the fact
+// that the *expected* size of a photometric residual is not uniform: on a
+// strongly textured/edge pixel, a sub-pixel misalignment naturally produces
+// a large intensity swing even with no occlusion, while the same raw
+// residual on a flat, low-texture pixel is much more surprising and much
+// more likely to be a genuine outlier (occlusion, specularity).
+//
+// w_h/w_v/w_d are the multi-scale Hermite-filtered responses of the current
+// image I already computed by Ihermite() at sigma2/sigma3/sigma4 (w_a, at
+// the finest scale sigma1, is left out as it stays close to raw intensity
+// and adds little discriminative structure). Their combined magnitude is
+// used as a per-pixel local structure-energy estimate structG, normalized
+// to be ~1 on average. Each residual is then rescaled by structG before
+// being handed to the M-estimator, so residuals on high-structure pixels
+// are shrunk (judged less extreme) and residuals on flat pixels are
+// amplified (judged more extreme) relative to the plain, unnormalized
+// approach used previously.
+//
+// Assumes the feature vector `error` is one scalar per image pixel, in
+// row-major (i*width+j) order, matching vpFeatureLuminance's standard
+// layout. If the custom vpFeatureLuminance used here stacks additional
+// channels into `error`, this falls back to the unnormalized residual.
+void computeHermiteNormalizedResidual(const vpColVector &error, vpColVector &structG, vpColVector &error_n)
+{
+	const unsigned int height = I.getHeight();
+	const unsigned int width = I.getWidth();
+	const unsigned int nbPixels = height * width;
+
+	error_n = error;
+	if (error.getRows() != nbPixels) {
+		// Feature layout doesn't match one-scalar-per-pixel: skip normalization.
+		structG.resize(0);
+		return;
+	}
+
+	structG.resize(nbPixels);
+	double sumG = 0.0;
+	unsigned int k = 0;
+	for (unsigned int i = 0; i < height; i++) {
+		for (unsigned int j = 0; j < width; j++) {
+			double gh = w_h[i][j], gv = w_v[i][j], gd = w_d[i][j];
+			structG[k] = std::sqrt(gh * gh + gv * gv + gd * gd);
+			sumG += structG[k];
+			k++;
+		}
+	}
+
+	double Gmean = sumG / nbPixels;
+	if (Gmean < 1e-12) Gmean = 1e-12;
+
+	for (unsigned int idx = 0; idx < nbPixels; idx++) {
+		double Gbar = structG[idx] / Gmean; // relative local structure energy, ~1 on average
+		if (Gbar < 0.1) Gbar = 0.1;          // cap amplification in near-flat regions
+		error_n[idx] = error[idx] / Gbar;
+	}
+}
 
 void
 init_visp_plot(vpPlot& ViSP_plot) {
