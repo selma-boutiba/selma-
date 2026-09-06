@@ -449,6 +449,16 @@ void init()
 	diagHsd.eye(n);
 	for (unsigned int i = 0; i < n; i++) diagHsd[i][i] = Hsd[i][i];
 
+	// Fixed-floor identity term added to the damped Hessian below. Because
+	// the LM damping here scales with diag(Hsd) rather than the identity,
+	// it vanishes on any direction the (possibly robustly-weighted) Hsd
+	// itself leaves unconstrained - e.g. if enough pixels get a zero Tukey
+	// weight that an entire degree of freedom loses support - which would
+	// otherwise make (mu*diagHsd + Hsd) singular and inverseByLU() throw.
+	// muFloor guarantees invertibility regardless of how Hsd degenerates.
+	vpMatrix Ifloor(n, n);
+	Ifloor.eye(n);
+
 	// ------------------------------------------------------
 	// Control law
 	double lambda; //gain
@@ -587,9 +597,17 @@ void init()
 			std::cout << "Ne       =    " << (5.23*log10(Ne)) << std::endl;
 			//std::cin.get();
 
-			// Compute the levenberg Marquartd term
+			// Compute the levenberg Marquartd term. muFloor*Ifloor guarantees
+			// (mu*diagHsd + Hsd + muFloor*Ifloor) stays invertible even if
+			// robust rejection has driven some diagonal entry of Hsd to zero.
 			{
-				H = ((mu * diagHsd) + Hsd).inverseByLU();
+				double meanDiag = 0.0;
+				for (unsigned int i = 0; i < n; i++) meanDiag += diagHsd[i][i];
+				meanDiag /= n;
+				double muFloor = 1e-6 * meanDiag;
+				if (muFloor < 1e-12) muFloor = 1e-12;
+
+				H = ((mu * diagHsd) + Hsd + muFloor * Ifloor).inverseByLU();
 			}
 			//  compute the control law
 			e = H * Lp.t() * error_p;
