@@ -45,10 +45,11 @@
 #define GETOPTARGS  "cdi:n:w:h"
 
 // Ablation mode: which weighting matrix D the control law uses.
+// W_ALL    -> run all three below back to back in one launch
 // W_NONE   -> D = I            (Chapter 3 / HER-PVS baseline, exactly)
 // W_TUKEY  -> D = D^T          (plain residual-based Tukey M-estimator)
 // W_HERMITE-> D = D^H          (Hermite-informed structure-aware weighting)
-enum WeightMode { W_NONE = 1, W_TUKEY = 2, W_HERMITE = 3 };
+enum WeightMode { W_ALL = 0, W_NONE = 1, W_TUKEY = 2, W_HERMITE = 3 };
 
 void usage(const char *name, const char *badparam, std::string ipath, int niter);
 bool getOptions(int argc, const char **argv, std::string &ipath,
@@ -82,9 +83,10 @@ void usage(const char *name, const char *badparam, std::string ipath, int niter)
   113   -n %%d                                               %d\n\
   114      Number of iterations.\n\
   115 \n\
-  116   -w <1|2|3>                                            3\n\
-  117      Ablation weighting mode: 1 = D=I (no weighting, Ch.3 baseline),\n\
-  118      2 = plain Tukey, 3 = Hermite-informed Tukey.\n\
+  116   -w <0|1|2|3>                                          3\n\
+  117      Ablation weighting mode: 0 = run all three back to back,\n\
+  118      1 = D=I (no weighting, Ch.3 baseline), 2 = plain Tukey,\n\
+  119      3 = Hermite-informed Tukey. Each run writes results_<mode>.csv.\n\
   119 \n\
   120   -h\n\
   121      Print the help.\n",
@@ -156,8 +158,8 @@ int main(int argc, const char ** argv)
 			opt_display, opt_niter, opt_wmode) == false) {
 			return (-1);
 		}
-		if (opt_wmode != W_NONE && opt_wmode != W_TUKEY && opt_wmode != W_HERMITE) {
-			std::cerr << "ERROR: -w must be 1 (none), 2 (Tukey) or 3 (Hermite)" << std::endl;
+		if (opt_wmode != W_ALL && opt_wmode != W_NONE && opt_wmode != W_TUKEY && opt_wmode != W_HERMITE) {
+			std::cerr << "ERROR: -w must be 0 (run all three), 1 (none), 2 (Tukey) or 3 (Hermite)" << std::endl;
 			return (-1);
 		}
 
@@ -189,7 +191,21 @@ int main(int argc, const char ** argv)
 			exit(-1);
 		}
 
-		init((WeightMode)opt_wmode);
+		if (opt_wmode == W_ALL) {
+			// Run the full three-way ablation in one launch, so all three
+			// result files are produced without having to pass -w three
+			// times (useful when launching from the IDE, where command
+			// line arguments are easy to forget).
+			init(W_NONE);
+			init(W_TUKEY);
+			init(W_HERMITE);
+			std::cout << std::endl
+				<< "All three variants finished. Wrote results_none.csv, "
+				<< "results_tukey.csv and results_hermite.csv." << std::endl;
+		}
+		else {
+			init((WeightMode)opt_wmode);
+		}
 
 		return 0;
 	}
