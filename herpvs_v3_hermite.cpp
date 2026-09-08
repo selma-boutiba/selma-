@@ -238,10 +238,10 @@ void init()
 	bool opt_click_allowed = true;
 	bool opt_display = true;
 	int opt_niter = 1000;
-	vpImage<unsigned char> Itexture;
-	vpImage<unsigned char> Itextured;
-	vpImageIo::read(Itexture, "./peppers.jpg");
-	vpImageIo::read(Itextured, "./peppers_o_b.jpg");
+	vpImage<unsigned char> Iclean;      // target texture, no occluder
+	vpImage<unsigned char> Ioccluded;   // same texture with the synthetic occluder
+	vpImageIo::read(Iclean, "./peppers.jpg");
+	vpImageIo::read(Ioccluded, "./peppers_o_b.jpg");
 	
 	vpColVector X[4];
 	for (int i = 0; i < 4; i++) X[i].resize(3);
@@ -253,7 +253,10 @@ void init()
 	vpImageSimulator sim;
 
 	sim.setInterpolationType(vpImageSimulator::BILINEAR_INTERPOLATION);
-	sim.init(Itextured, X);
+	// The reference image I* is acquired from the CLEAN target: the
+	// occlusion is a corruption of what the camera sees during servoing,
+	// not of the reference it is servoing towards.
+	sim.init(Iclean, X);
 
 	vpPlot ViSP_plot;
 	init_visp_plot(ViSP_plot);
@@ -340,8 +343,11 @@ void init()
 	vpHomogeneousMatrix wMo; // Set to identity
 	vpHomogeneousMatrix wMc; // Camera position in the world frame
 	
-	//set the robot at the desired position
-	sim.init(Itexture, X);
+	//set the robot at the initial position
+	// Every image acquired from here on shows the OCCLUDED target, so the
+	// occluded region has low Hermite response energy in the current image
+	// - which is what the structure-aware weighting keys on.
+	sim.init(Ioccluded, X);
 	sim.setCameraPosition(cMo);
 	I = 0;
 	sim.getImage(I, cam);  // and aquire the image Id
