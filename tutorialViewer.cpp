@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <visp3/core/vpDebug.h>
 #include <visp3/core/vpConfig.h>
 #include <visp3/core/vpImage.h>
@@ -242,10 +243,20 @@ using namespace std;
 
 void init(WeightMode wmode)
 {
-	std::cout << "Weighting mode: " << (int)wmode
-		<< (wmode == W_NONE ? " (D=I, no weighting)" :
-		    wmode == W_TUKEY ? " (plain Tukey)" : " (Hermite-informed Tukey)")
-		<< std::endl;
+	std::string modeName = (wmode == W_NONE) ? "none" :
+	                        (wmode == W_TUKEY) ? "tukey" : "hermite";
+	std::cout << "Weighting mode: " << (int)wmode << " (" << modeName << ")" << std::endl;
+
+	// Per-iteration CSV log, one file per weighting mode, so the three
+	// variants' results persist as separate, comparable files instead of
+	// only ever existing transiently on screen/in the terminal scrollback.
+	std::string csvFilename = "results_" + modeName + ".csv";
+	std::ofstream csv(csvFilename.c_str());
+	csv << "mode,iter,normeError,normeErrorI,lambda,mu,"
+		<< "vx,vy,vz,wx,wy,wz,"
+		<< "err_tx,err_ty,err_tz,err_rx,err_ry,err_rz\n";
+	std::cout << "Logging to " << csvFilename << std::endl;
+
 	bool opt_click_allowed = true;
 	bool opt_display = true;
 	int opt_niter = 1000;
@@ -661,6 +672,14 @@ void init(WeightMode wmode)
 			std::cout << std::endl;
 
 		}
+
+		csv << modeName << "," << iter << "," << normeError << "," << normeErrorI
+			<< "," << lambda << "," << mu;
+		for (unsigned int i = 0; i < 6; i++) csv << "," << v[i];
+		for (unsigned int i = 0; i < 6; i++) csv << "," << errorpose[i];
+		csv << "\n";
+		csv.flush(); // keep results on disk even if the run is interrupted
+
 		//std::cin.get();
 		ViSP_plot.plot(0, (iter), v);
 		ViSP_plot.plot(1, (iter) , errorpose);
