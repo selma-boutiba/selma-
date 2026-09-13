@@ -1,0 +1,95 @@
+% ======================================================================
+%  Section 4.7.1 --- Nominal case: behaviour without occlusion
+%
+%  Insert as the FIRST subsection of 4.7, before "Convergence under
+%  occlusion" (which becomes 4.7.2).
+%
+%  Prose that does not depend on the outcome is written as final text.
+%  Every point that needs a number from an actual run is marked
+%  %%% DATA  and must not be written until the run has been made.
+%
+%  Requires: the three variants run with  USE_OCCLUDER = false
+%            -> results_none.csv, results_tukey.csv, results_hermite.csv
+% ======================================================================
+
+\subsection{Nominal case: behaviour without occlusion}
+\label{sec:nominal}
+
+Before occlusion is introduced, it is necessary to establish what the three
+variants do when there is nothing to reject. Two distinct questions are settled
+by this run. The first is whether the weighted formulation is \emph{transparent}
+in the absence of outliers: Remark~\ref{rem:baseline} asserts that
+$\mathbf{D}=\mathbf{I}$ reduces~\eqref{eq:robust-lm-law} to the control law of
+Chapter~\ref{ch:herpvs}, and the nominal run verifies numerically what that
+remark establishes algebraically. The second is a matter of attribution: unless
+the three variants are known to agree when the scene is clean, any difference
+observed later under occlusion cannot be ascribed to the treatment of the
+occlusion rather than to the weighting disturbing the nominal behaviour of the
+control law.
+
+\subsubsection*{Conditions}
+
+The reference image $\mathbf{I}^{*}$ is acquired from the unoccluded target at
+the desired pose, as in every configuration of this chapter. For the nominal run
+alone, the images acquired during servoing are also taken from the unoccluded
+target, so that the residual arises solely from the pose error and no
+measurement is corrupted. The initial pose is
+%%% DATA: state the initial pose actually used, e.g.
+%%% $(t_x,t_y,t_z)=(0.02,-0.02,1.36)\,\mathrm{m}$,
+%%% $(\theta u_x,\theta u_y,\theta u_z)=(2,-2,1)^{\circ}$,
+%%% and the corresponding mean image displacement with respect to the
+%%% desired view (in pixels), which fixes the difficulty of the task.
+and the desired pose is the frontal view at $Z=1.3\,\mathrm{m}$ at which the
+target fills the image. All remaining quantities --- the Hermite bank and its
+four scales, the interaction matrix~\eqref{eq:stacked-L}, the adaptive gain and
+damping~\eqref{eq:lambda}--\eqref{eq:mu}, the Tukey constant, the sampling
+period and the stopping criterion --- are those fixed in
+Section~\ref{sec:ablation-protocol} and are identical across the three variants.
+
+\subsubsection*{Reported quantities}
+
+Figure~\ref{fig:nominal-error} superimposes the evolution of the feature-error
+norm $\norm{\mathbf{e}}$ for the three variants, and the corresponding final
+pose errors and iteration counts are given in the first block of
+Table~\ref{tab:ch4-ablation}. Transparency of the weighting is taken to hold
+when the three trajectories are indistinguishable to within the numerical
+tolerance of the solver, and when the final pose errors agree to the precision
+reported.
+
+%%% DATA: the outcome. Two cases; write whichever the runs show, and do not
+%%% write either before they have been made.
+%%%
+%%% CASE A --- the three trajectories coincide:
+%%%   "The three trajectories coincide throughout, and the final pose errors
+%%%    agree to <precision>. The weighting is therefore transparent in the
+%%%    absence of outliers: with no residual large enough to be rejected, the
+%%%    Tukey weights remain at unity across the image and both weighted
+%%%    variants reproduce the unweighted control law. Remark~\ref{rem:baseline}
+%%%    is thus confirmed numerically, and any difference observed in the
+%%%    occluded configurations of Section~\ref{sec:ablation-results} may be
+%%%    attributed to the treatment of the occlusion alone."
+%%%
+%%% CASE B --- Variant 2 (and possibly 3) departs from Variant 1:
+%%%   This is not a defect and must not be treated as one. It is the
+%%%   phenomenon anticipated in Section~\ref{sec:tukey-limitation}: while the
+%%%   initial pose error is large, valid measurements in photometrically
+%%%   sensitive regions produce legitimately large residuals, and a
+%%%   redescending estimator rejects a proportion of them. The nominal run then
+%%%   ceases to be a mere verification and becomes a first result, namely that
+%%%   residual-based rejection carries a cost even when the scene is clean.
+%%%   Report the magnitude of that cost (difference in iterations and in final
+%%%   pose error), and state whether the structure normalization of
+%%%   Section~\ref{sec:hermite-weight} reduces it --- which is precisely what
+%%%   it was designed to do, since it shrinks the residual where the local
+%%%   Hermite energy is high.
+
+\begin{figure}[t]
+    \centering
+    % \includegraphics[width=\linewidth]{figures/ch4_nominal_error.pdf}
+    \caption{Nominal case, unoccluded target: evolution of the feature-error
+    norm $\norm{\mathbf{e}}$ against iteration for the three weighting variants
+    of Section~\ref{sec:ablation-protocol}. With no corrupted measurement
+    present, the weighted variants are expected to reproduce the unweighted
+    control law.}
+    \label{fig:nominal-error}
+\end{figure}

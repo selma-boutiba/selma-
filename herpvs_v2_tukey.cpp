@@ -205,6 +205,11 @@ vpImage<double> dwwx_a(240, 320, 0); vpImage<double> dwwx_h(240, 320, 0); vpImag
 vpImage<double> dwwy_a(240, 320, 0); vpImage<double> dwwy_h(240, 320, 0); vpImage<double> dwwy_v(240, 320, 0); vpImage<double> dwwy_d(240, 320, 0);
 vpImage<double> dwwz_a(240, 320, 0); vpImage<double> dwwz_h(240, 320, 0); vpImage<double> dwwz_v(240, 320, 0); vpImage<double> dwwz_d(240, 320, 0);
 
+// Set false for the nominal run of Section 4.7.1 (clean target, nothing to
+// reject); true for every occluded configuration. The reference image I* is
+// always acquired from the clean target either way.
+const bool USE_OCCLUDER = true;
+
 unsigned int bord = 10;
 vpCameraParameters cam(870, 870, 160, 120);
 double px = cam.get_px();
@@ -229,7 +234,7 @@ void init()
 	// Per-iteration CSV log for this variant, so the three variants'
 	// results persist as separate, comparable files.
 	std::ofstream csv("results_tukey.csv");
-	csv << "variant,iter,normeError,normeErrorI,lambda,mu,"
+	csv << "variant,occluder,iter,normeError,normeErrorI,lambda,mu,"
 		<< "vx,vy,vz,wx,wy,wz,"
 		<< "err_tx,err_ty,err_tz,err_rx,err_ry,err_rz\n";
 	std::cout << "Variant: tukey  ->  results_tukey.csv" << std::endl;
@@ -346,7 +351,7 @@ void init()
 	// Every image acquired from here on shows the OCCLUDED target, so the
 	// occluded region has low Hermite response energy in the current image
 	// - which is what the structure-aware weighting keys on.
-	sim.init(Ioccluded, X);
+	sim.init(USE_OCCLUDER ? Ioccluded : Iclean, X);
 	sim.setCameraPosition(cMo);
 	I = 0;
 	sim.getImage(I, cam);  // and aquire the image Id
@@ -624,7 +629,7 @@ void init()
 
 		}
 
-		csv << "tukey,"  << iter << "," << normeError << "," << normeErrorI
+		csv << "tukey,"  << (USE_OCCLUDER ? "occluded," : "clean,") << iter << "," << normeError << "," << normeErrorI
 			<< "," << lambda << "," << mu;
 		for (unsigned int i = 0; i < 6; i++) csv << "," << v[i];
 		for (unsigned int i = 0; i < 6; i++) csv << "," << errorpose[i];
