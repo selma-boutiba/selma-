@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <visp3/core/vpDebug.h>
 #include <visp3/core/vpConfig.h>
 #include <visp3/core/vpImage.h>
@@ -234,11 +235,13 @@ void init()
 {
 	// Per-iteration CSV log for this variant, so the three variants'
 	// results persist as separate, comparable files.
-	std::ofstream csv("results_hermite.csv");
+	std::string csvName = std::string("results_hermite_")
+		+ (USE_OCCLUDER ? "occluded" : "clean") + ".csv";
+	std::ofstream csv(csvName.c_str());
 	csv << "variant,occluder,iter,normeError,normeErrorI,lambda,mu,"
 		<< "vx,vy,vz,wx,wy,wz,"
 		<< "err_tx,err_ty,err_tz,err_rx,err_ry,err_rz\n";
-	std::cout << "Variant: hermite  ->  results_hermite.csv" << std::endl;
+	std::cout << "Variant: hermite  ->  " << csvName << std::endl;
 
 	bool opt_click_allowed = true;
 	bool opt_display = true;
