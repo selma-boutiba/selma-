@@ -207,9 +207,9 @@ vpImage<double> dwwx_a(240, 320, 0); vpImage<double> dwwx_h(240, 320, 0); vpImag
 vpImage<double> dwwy_a(240, 320, 0); vpImage<double> dwwy_h(240, 320, 0); vpImage<double> dwwy_v(240, 320, 0); vpImage<double> dwwy_d(240, 320, 0);
 vpImage<double> dwwz_a(240, 320, 0); vpImage<double> dwwz_h(240, 320, 0); vpImage<double> dwwz_v(240, 320, 0); vpImage<double> dwwz_d(240, 320, 0);
 
-// Set false for the nominal run of Section 4.7.1 (clean target, nothing to
-// reject); true for every occluded configuration. The reference image I* is
-// always acquired from the clean target either way.
+// false -> nominal run of Section 4.7.1 (clean target, nothing to reject).
+// true  -> every occluded configuration.
+// The reference image I* is acquired from the clean target either way.
 const bool USE_OCCLUDER = true;
 
 unsigned int bord = 10;
@@ -233,8 +233,10 @@ using namespace std;
 
 void init()
 {
-	// Per-iteration CSV log for this variant, so the three variants'
-	// results persist as separate, comparable files.
+	
+
+	// Per-iteration log. The filename carries the variant and the condition,
+	// so the six runs of Sections 4.7.1-4.7.2 coexist instead of overwriting.
 	std::string csvName = std::string("results_hermite_")
 		+ (USE_OCCLUDER ? "occluded" : "clean") + ".csv";
 	std::ofstream csv(csvName.c_str());
@@ -247,7 +249,7 @@ void init()
 	bool opt_display = true;
 	int opt_niter = 1000;
 	vpImage<unsigned char> Iclean;      // target texture, no occluder
-	vpImage<unsigned char> Ioccluded;   // same texture with the synthetic occluder
+	vpImage<unsigned char> Ioccluded;   // same texture with the occluder
 	vpImageIo::read(Iclean, "./peppers.jpg");
 	vpImageIo::read(Ioccluded, "./peppers_o_b.jpg");
 	
@@ -261,9 +263,8 @@ void init()
 	vpImageSimulator sim;
 
 	sim.setInterpolationType(vpImageSimulator::BILINEAR_INTERPOLATION);
-	// The reference image I* is acquired from the CLEAN target: the
-	// occlusion is a corruption of what the camera sees during servoing,
-	// not of the reference it is servoing towards.
+	// Reference I* from the CLEAN target: the occlusion corrupts what the
+	// camera sees during servoing, not the reference it servos towards.
 	sim.init(Iclean, X);
 
 	vpPlot ViSP_plot;
@@ -331,7 +332,8 @@ void init()
 	//cMo.buildFrom(-3.32 ,- 2.28, 6.5, vpMath::rad(29), vpMath::rad(-32), vpMath::rad(24));
 
 	//partial occulation
-	
+	cMo.buildFrom(0.02, -0.02, 1.36, vpMath::rad(2), vpMath::rad(-2), vpMath::rad(1));
+
 	//cMo.buildFrom(0.27, -0.25, 3.20, vpMath::rad(31), vpMath::rad(-28), vpMath::rad(6));
 	//cMo.buildFrom(-0.24, 0.26, 3.18, vpMath::rad(-29), vpMath::rad(30), vpMath::rad(-7));
 	//cMo.buildFrom(0.25, 0.28, 3.22, vpMath::rad(34), vpMath::rad(-30), vpMath::rad(5));
@@ -340,7 +342,7 @@ void init()
 	//cMo.buildFrom(-0.28, 0.25, 3.20, vpMath::rad(32), vpMath::rad(30), vpMath::rad(-4));
 	//cMo.buildFrom(0.30, 0.22, 3.21, vpMath::rad(35), vpMath::rad(-32), vpMath::rad(8));
 	//cMo.buildFrom(-0.25, -0.28, 3.16, vpMath::rad(-34), vpMath::rad(31), vpMath::rad(-9));
-	cMo.buildFrom(0.23, -0.30, 3.17, vpMath::rad(33), vpMath::rad(-31), vpMath::rad(6));
+	//cMo.buildFrom(0.23, -0.30, 3.17, vpMath::rad(33), vpMath::rad(-31), vpMath::rad(6));
 	///cMo.buildFrom(-0.29, 0.27, 3.18, vpMath::rad(36), vpMath::rad(30), vpMath::rad(-7));
 
 
@@ -352,9 +354,6 @@ void init()
 	vpHomogeneousMatrix wMc; // Camera position in the world frame
 	
 	//set the robot at the initial position
-	// Every image acquired from here on shows the OCCLUDED target, so the
-	// occluded region has low Hermite response energy in the current image
-	// - which is what the structure-aware weighting keys on.
 	sim.init(USE_OCCLUDER ? Ioccluded : Iclean, X);
 	sim.setCameraPosition(cMo);
 	I = 0;
@@ -645,14 +644,16 @@ void init()
 
 		}
 
-		csv << "hermite,"  << (USE_OCCLUDER ? "occluded," : "clean,") << iter << "," << normeError << "," << normeErrorI
+		
+		//std::cin.get();
+		csv << "hermite,"  << (USE_OCCLUDER ? "occluded," : "clean,")
+			<< iter << "," << normeError << "," << normeErrorI
 			<< "," << lambda << "," << mu;
 		for (unsigned int i = 0; i < 6; i++) csv << "," << v[i];
 		for (unsigned int i = 0; i < 6; i++) csv << "," << errorpose[i];
 		csv << "\n";
 		csv.flush();
 
-		//std::cin.get();
 		ViSP_plot.plot(0, (iter), v);
 		ViSP_plot.plot(1, (iter) , errorpose);
 		ViSP_plot.plot(2, (iter) , err);
