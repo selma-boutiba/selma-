@@ -1,6 +1,4 @@
 #include <iostream>
-#include <fstream>
-#include <string>
 #include <visp3/core/vpDebug.h>
 #include <visp3/core/vpConfig.h>
 #include <visp3/core/vpImage.h>
@@ -233,15 +231,8 @@ void init()
 {
 
 
-	// Per-iteration log. The filename carries the variant and the condition,
-	// so the six runs of Sections 4.7.1-4.7.2 coexist instead of overwriting.
-	std::string csvName = std::string("results_none_")
-		+ (USE_OCCLUDER ? "occluded" : "clean") + ".csv";
-	std::ofstream csv(csvName.c_str());
-	csv << "variant,occluder,iter,normeError,normeErrorI,lambda,mu,"
-		<< "vx,vy,vz,wx,wy,wz,"
-		<< "err_tx,err_ty,err_tz,err_rx,err_ry,err_rz\n";
-	std::cout << "Variant: none  ->  " << csvName << std::endl;
+	std::cout << "Variant: none  ("
+		<< (USE_OCCLUDER ? "occluded" : "clean") << ")" << std::endl;
 
 	bool opt_click_allowed = true;
 	bool opt_display = true;
@@ -609,14 +600,6 @@ void init()
 
 		
 		//std::cin.get();
-		csv << "none,"  << (USE_OCCLUDER ? "occluded," : "clean,")
-			<< iter << "," << normeError << "," << normeErrorI
-			<< "," << lambda << "," << mu;
-		for (unsigned int i = 0; i < 6; i++) csv << "," << v[i];
-		for (unsigned int i = 0; i < 6; i++) csv << "," << errorpose[i];
-		csv << "\n";
-		csv.flush();
-
 		ViSP_plot.plot(0, (iter), v);
 		ViSP_plot.plot(1, (iter) , errorpose);
 		ViSP_plot.plot(2, (iter) , err);

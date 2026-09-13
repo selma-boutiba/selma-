@@ -8,8 +8,9 @@
 %  Every point that needs a number from an actual run is marked
 %  %%% DATA  and must not be written until the run has been made.
 %
-%  Requires: the three variants run with  USE_OCCLUDER = false
-%            -> results_none.csv, results_tukey.csv, results_hermite.csv
+%  Requires: the three variants each run with  USE_OCCLUDER = false.
+%            Results are read off the terminal output and the ViSP plot
+%            windows, so capture them before closing the run.
 % ======================================================================
 
 \subsection{Nominal case: behaviour without occlusion}
