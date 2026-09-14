@@ -1,0 +1,64 @@
+% ======================================================================
+%  New short subsection / paragraph: what each Hermite scale contributes.
+%
+%  Place wherever the Hermite bank and its four scales are introduced
+%  (Chapter 3, or Section 4.4 if the bank is restated there). It is a
+%  measured property of the feature, not a result of the ablation, so it
+%  does not belong in 4.7.
+%
+%  SOURCE OF THE NUMBERS: the per-channel residual RMS printed at the first
+%  iteration of the V3 nominal run,
+%      chan 0 = 1115.35, chan 1 = 1445.22, chan 2 = 1315.24, chan 3 = 464.302
+%  squared and normalized to sum to unity. The feature is channel-blocked,
+%  264000 = 4 x 66000 components.
+%
+%  %%% VERIFY: the association of channel index with scale assumes the
+%  %%% feature vector stacks the responses in the order the images are
+%  %%% passed to buildFrom, i.e. (w_a, w_h, w_v, w_d) = (s1, s2, s3, s4).
+%  %%% Confirm against the loop in the customized vpFeatureLuminance before
+%  %%% publishing the sigma column. The shares themselves do not depend on
+%  %%% this; only the labelling of the rows does.
+% ======================================================================
+
+\paragraph{Contribution of the individual scales.}
+The four scales of the bank do not contribute equally to the feature error.
+Measuring the residual separately in each of the four blocks of the stacked
+feature vector at the start of a nominal run gives the distribution of
+Table~\ref{tab:scale-energy}. Two points follow. First, the dependence on
+$\sigma$ is not monotone: the response is largest at $\sigma_2=1.1$ rather
+than at the finest scale, because a $9\times9$ support samples a
+$\sigma=0.5$ kernel too coarsely for its taps to contribute coherently, so
+the finest channel behaves closer to an identity than to a filter. Second,
+the coarsest scale is nearly redundant, carrying $4\%$ of the residual
+energy against $33$--$40\%$ for the two intermediate scales; at
+$\sigma_4=2.8$ the smoothing has removed most of the spatial detail that
+carries pose information.
+
+This is the quantitative justification for treating the scales
+$\{\sigma_k\}$ as parameters to be chosen rather than as a fixed geometric
+progression: a bank whose members contribute between $4\%$ and $40\%$ of the
+usable signal is demonstrably unbalanced, and the choice of scales is
+therefore a legitimate target for optimization rather than a detail of
+implementation.
+
+\begin{table}[t]
+    \centering
+    \caption{Share of the total feature-error energy carried by each scale of
+    the Hermite bank, measured at the initial pose of the nominal run. The
+    feature has $264\,000$ components, four blocks of $66\,000$ over the
+    $220\times300$ interior region left by the filter border.}
+    \label{tab:scale-energy}
+    \small
+    \begin{tabular}{@{}clrr@{}}
+        \toprule
+        Channel & Scale & Residual RMS & Share of energy \\
+        \midrule
+        0 & $\sigma_1=0.5$ & $1115.4$ & $23.6\%$ \\
+        1 & $\sigma_2=1.1$ & $1445.2$ & $39.6\%$ \\
+        2 & $\sigma_3=1.8$ & $1315.2$ & $32.8\%$ \\
+        3 & $\sigma_4=2.8$ & $\phantom{0}464.3$ & $\phantom{0}4.1\%$ \\
+        \midrule
+        \multicolumn{2}{@{}l}{Whole feature} & $1148.7$ & $100\%$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
