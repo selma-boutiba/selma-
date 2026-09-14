@@ -58,14 +58,22 @@ which is the accuracy expected of a direct scheme at convergence.
 Two observations require comment, as both bear on how the remaining sections
 must be read.
 
-First, the feature-error norm does not decay to zero but settles on a floor:
-$4.35\times10^{7}$ for Variant~1 and $1.04\times10^{8}$ for the two weighted
-variants, while the commanded velocity falls to between $1.4\times10^{-4}$ and
-$3.7\times10^{-4}$ and the pose error becomes sub-millimetre. The residual floor
-is therefore not a failure to converge but a property of the feature: the
-stacked four-scale Hermite responses retain a non-zero difference at the
-attained pose, and the servoing halts because the velocity, not the residual,
-has vanished. The absolute threshold on $\norm{\mathbf{e}}$ inherited from the
+%%% WITHDRAWN --- DO NOT USE. The explanation that stood here attributed the
+%%% feature-error floor (4.35e7 / 1.04e8) to "a property of the feature", i.e.
+%%% to the stacked Hermite responses retaining a non-zero difference at the
+%%% attained pose. That explanation is WRONG. The three source files that
+%%% produced these numbers build the REFERENCE image from the OCCLUDED texture
+%%% (sim.init(Itextured, X) before cdMo) and the SERVOING images from the CLEAN
+%%% texture (sim.init(Itexture, X) before cMo). I* therefore contained the black
+%%% ellipse and I did not, so a large part of the residual could never be
+%%% cancelled by any pose. The floor is an artifact of the wiring, not a
+%%% property of the feature. The nominal run must be repeated with the two
+%%% sim.init calls swapped before anything is written about the residual floor.
+First, the feature-error norm does not decay to zero but settles on a floor
+%%% RE-MEASURE after the wiring fix.
+(value to be re-measured), while the commanded velocity falls to between
+$1.4\times10^{-4}$ and $3.7\times10^{-4}$ and the pose error becomes
+sub-millimetre. The absolute threshold on $\norm{\mathbf{e}}$ inherited from the
 implementation lies four orders of magnitude below this floor and is never
 reached, so convergence is reported throughout this chapter against the
 commanded velocity, a run being taken as converged once
@@ -106,6 +114,11 @@ the sections that follow.
     $\norm{\mathbf{V}_c}<10^{-3}\,\mathrm{m\,s^{-1}}$. All values are taken at
     iteration~600, images of $320\times240$ pixels.}
     \label{tab:ch4-nominal}
+    %%% INVALID DATA --- the runs behind these numbers used an occluded
+    %%% reference image (see the withdrawn paragraph above). Re-run all three
+    %%% variants with sim.init(Itexture, X) before cdMo and
+    %%% sim.init(Itextured, X) before cMo, then refill this table. The layout,
+    %%% units and headers below are correct and can be reused as-is.
     \small
     \begin{tabular}{@{}lrrrrrrrr@{}}
         \toprule
