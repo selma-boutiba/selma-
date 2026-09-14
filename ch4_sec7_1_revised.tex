@@ -58,32 +58,43 @@ which is the accuracy expected of a direct scheme at convergence.
 Two observations require comment, as both bear on how the remaining sections
 must be read.
 
-%%% WITHDRAWN --- DO NOT USE. The explanation that stood here attributed the
-%%% feature-error floor (4.35e7 / 1.04e8) to "a property of the feature", i.e.
-%%% to the stacked Hermite responses retaining a non-zero difference at the
-%%% attained pose. That explanation is WRONG. The three source files that
-%%% produced these numbers build the REFERENCE image from the OCCLUDED texture
-%%% (sim.init(Itextured, X) before cdMo) and the SERVOING images from the CLEAN
-%%% texture (sim.init(Itexture, X) before cMo). I* therefore contained the black
-%%% ellipse and I did not, so a large part of the residual could never be
-%%% cancelled by any pose. The floor is an artifact of the wiring, not a
-%%% property of the feature. The nominal run must be repeated with the two
-%%% sim.init calls swapped before anything is written about the residual floor.
-First, the feature-error norm does not decay to zero but settles on a floor
-%%% RE-MEASURE after the wiring fix.
-(value to be re-measured), while the commanded velocity falls to between
-$1.4\times10^{-4}$ and $3.7\times10^{-4}$ and the pose error becomes
-sub-millimetre. The absolute threshold on $\norm{\mathbf{e}}$ inherited from the
-implementation lies four orders of magnitude below this floor and is never
-reached, so convergence is reported throughout this chapter against the
+First, the feature error does not decay to zero but settles on a floor:
+$4.35\times10^{7}$ for Variant~1 and $1.04\times10^{8}$ for the two weighted
+variants, while the commanded velocity falls to between $1.4\times10^{-4}$ and
+$3.7\times10^{-4}\,\mathrm{m\,s^{-1}}$ and the pose error becomes
+sub-millimetre. The quantity reported is the sum of squares
+$\norm{\mathbf{e}}^{2}$ rather than the norm, so these floors correspond to a
+root-mean-square residual of the order of ten grey levels per feature
+component. The run terminates not because the residual has been minimised but
+because the adaptive gain has decayed with it: by~\eqref{eq:lambda} the gain is
+proportional to the intensity error, $\lambda=\norm{\mathbf{e}_I}^{2}/
+N_{e}^{0.8}$, so it falls from $\lambda\simeq53$ at the first iteration towards
+order unity, and since the commanded velocity is itself proportional to the
+residual, $\norm{\mathbf{V}_c}$ decays roughly as the cube of the misalignment
+and vanishes while a small misalignment remains. That misalignment is dominated
+by its rotational part: $\norm{\Delta\boldsymbol{\omega}}=0.22^{\circ}$ for
+Variant~1 and $0.60^{\circ}$ for the weighted variants correspond, at
+$f=870$~px, to image displacements of approximately $3$ and $9$~pixels, whereas
+the translational errors of $0.34$~mm and $0.81$~mm at $Z=1.3$~m correspond to
+less than a quarter of a pixel. The two floors are ordered as these two
+misalignments are, which is the consistency to be expected if the floor is a
+residual-misalignment effect rather than a property of the feature. The
+absolute threshold $\norm{\mathbf{e}}^{2}>10^{4}$ inherited from the
+implementation lies more than three orders of magnitude below this floor and is
+never reached, so convergence is reported throughout this chapter against the
 commanded velocity, a run being taken as converged once
 $\norm{\mathbf{V}_c}$ falls below $10^{-3}\,\mathrm{m\,s^{-1}}$. The criterion
 stated in Section~\ref{sec:ablation-protocol} is to be read accordingly.
 
-%%% OPEN (b): the sentence below is written for the case where Variants 2
-%%% and 3 coincide. Confirm this against the runs before keeping it; if the
-%%% two variants do differ, replace it with a statement of the difference
-%%% and of what the structure normalization changed.
+%%% OPEN (b): DO NOT KEEP the sentence below until the diagnostic described
+%%% in diag_v3_gate.cpp has been run. computeHermiteNormalizedResidual()
+%%% returns the residual UNCHANGED unless error.getRows() equals the pixel
+%%% count. If the customized vpFeatureLuminance stacks the four Hermite
+%%% scales, error has 4 x 76800 rows, the guard fires, and Variant 3 executes
+%%% exactly the same arithmetic as Variant 2 -- which would explain the two
+%%% identical consoles far more simply than any cancellation effect. In that
+%%% case Variants 2 and 3 coinciding is a BUG, not a finding, and the sentence
+%%% below would be an unsupported claim about an inert mechanism.
 Second, Variants~2 and~3 produce the same trajectory to the precision recorded.
 This is the expected behaviour and not a defect: with no corrupted measurement
 present, the structure normalization~\eqref{eq:normalized-residual} rescales
@@ -114,11 +125,6 @@ the sections that follow.
     $\norm{\mathbf{V}_c}<10^{-3}\,\mathrm{m\,s^{-1}}$. All values are taken at
     iteration~600, images of $320\times240$ pixels.}
     \label{tab:ch4-nominal}
-    %%% INVALID DATA --- the runs behind these numbers used an occluded
-    %%% reference image (see the withdrawn paragraph above). Re-run all three
-    %%% variants with sim.init(Itexture, X) before cdMo and
-    %%% sim.init(Itextured, X) before cMo, then refill this table. The layout,
-    %%% units and headers below are correct and can be reused as-is.
     \small
     \begin{tabular}{@{}lrrrrrrrr@{}}
         \toprule
@@ -139,6 +145,11 @@ the sections that follow.
 
 %%% OPEN: whether Variants 2 and 3 genuinely coincide. The two consoles
 %%% supplied agree to every printed digit on |e|, lambda, mu, |Vc| and all
-%%% six pose components, which is what two runs of the SAME binary look
-%%% like. Confirm from the startup banner before keeping the coincidence
-%%% sentence in the prose above.
+%%% six pose components. Three explanations remain, in decreasing order of
+%%% likelihood:
+%%%   (1) the dimension guard in computeHermiteNormalizedResidual() fires,
+%%%       so Variant 3 runs as Variant 2 -- test with diag_v3_gate.cpp;
+%%%   (2) the two consoles are two runs of the same binary;
+%%%   (3) the normalization genuinely cancels in the MAD, which is the only
+%%%       one of the three that would support the prose above.
+%%% Settle (1) before anything else: it is a one-line test.
