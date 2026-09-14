@@ -9,11 +9,9 @@
 %    under "mm" and "deg" headers, making every translation 1000x too
 %    small and every rotation 57.3x too small.
 %
-%  STILL OPEN, marked %%% OPEN below:
-%    (a) the values are from mid-run captures (iter 284 / 601), not the
-%        last iteration of each run;
-%    (b) whether Variants 2 and 3 genuinely coincide, or whether the two
-%        captures supplied are the same run.
+%  All values are at iteration 600 for all three variants.
+%  STILL OPEN, marked %%% OPEN below: whether Variants 2 and 3 genuinely
+%  coincide, or whether the two consoles supplied are the same run.
 % ======================================================================
 
 \subsection{Nominal case}
@@ -60,9 +58,10 @@ which is the accuracy expected of a direct scheme at convergence.
 Two observations require comment, as both bear on how the remaining sections
 must be read.
 
-First, the feature-error norm does not decay to zero but settles near
-$1.03\times10^{8}$, while the commanded velocity falls to approximately
-$4\times10^{-4}$ and the pose error becomes sub-millimetre. The residual floor
+First, the feature-error norm does not decay to zero but settles on a floor:
+$4.35\times10^{7}$ for Variant~1 and $1.04\times10^{8}$ for the two weighted
+variants, while the commanded velocity falls to between $1.4\times10^{-4}$ and
+$3.7\times10^{-4}$ and the pose error becomes sub-millimetre. The residual floor
 is therefore not a failure to converge but a property of the feature: the
 stacked four-scale Hermite responses retain a non-zero difference at the
 attained pose, and the servoing halts because the velocity, not the residual,
@@ -88,8 +87,9 @@ what makes the occluded configurations of Section~\ref{sec:ablation-results} the
 place where it can be assessed.
 
 Variant~1 reaches a marginally smaller final error than the two weighted
-variants. The difference, of the order of a quarter of a millimetre and a
-quarter of a degree, is consistent with the cost anticipated in
+variants: $0.34$~mm against $0.81$~mm in translation and $0.22^{\circ}$ against
+$0.60^{\circ}$ in rotation, and a feature-error floor less than half as high.
+This is consistent with the cost anticipated in
 Section~\ref{sec:tukey-limitation}: while the pose error is still large the
 valid measurements in photometrically sensitive regions produce legitimately
 large residuals, a fraction of which a redescending estimator rejects, so the
@@ -103,7 +103,8 @@ the sections that follow.
     desired pose $(0,0,1300)\,\mathrm{mm}$, $(0,0,0)^{\circ}$. Translations in
     millimetres, rotations in degrees. No run reached the absolute threshold on
     $\norm{\mathbf{e}}$; all three satisfied
-    $\norm{\mathbf{V}_c}<10^{-3}\,\mathrm{m\,s^{-1}}$.}
+    $\norm{\mathbf{V}_c}<10^{-3}\,\mathrm{m\,s^{-1}}$. All values are taken at
+    iteration~600, images of $320\times240$ pixels.}
     \label{tab:ch4-nominal}
     \small
     \begin{tabular}{@{}lrrrrrrrr@{}}
@@ -116,15 +117,15 @@ the sections that follow.
                 & $\Delta\omega_x$ & $\Delta\omega_y$ & $\Delta\omega_z$
                 & $\norm{\Delta\mathbf{t}}$ & $\norm{\Delta\boldsymbol{\omega}}$ \\
         \midrule
-        1 --- none    & $+0.069$ & $-0.224$ & $-0.510$ & $+0.250$ & $-0.218$ & $+0.019$ & $0.561$ & $0.332$ \\
+        1 --- none    & $+0.053$ & $-0.140$ & $-0.302$ & $+0.168$ & $-0.139$ & $+0.015$ & $0.337$ & $0.219$ \\
         2 --- Tukey   & $+0.004$ & $-0.166$ & $-0.789$ & $+0.568$ & $-0.195$ & $-0.007$ & $0.806$ & $0.601$ \\
         3 --- Hermite & $+0.004$ & $-0.166$ & $-0.789$ & $+0.568$ & $-0.195$ & $-0.007$ & $0.806$ & $0.601$ \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-%%% OPEN (a): the values above are from console captures at iterations 284
-%%% (Variant 1) and 601 (Variants 2 and 3), with the loop still running and
-%%% the cap at 1000. Replace them with the last iteration of each run, and
-%%% add an "Iter." column giving the iteration at which
-%%% |V_c| < 1e-3 was first satisfied.
+%%% OPEN: whether Variants 2 and 3 genuinely coincide. The two consoles
+%%% supplied agree to every printed digit on |e|, lambda, mu, |Vc| and all
+%%% six pose components, which is what two runs of the SAME binary look
+%%% like. Confirm from the startup banner before keeping the coincidence
+%%% sentence in the prose above.
