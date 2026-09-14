@@ -63,9 +63,11 @@ $4.35\times10^{7}$ for Variant~1 and $1.04\times10^{8}$ for the two weighted
 variants, while the commanded velocity falls to between $1.4\times10^{-4}$ and
 $3.7\times10^{-4}\,\mathrm{m\,s^{-1}}$ and the pose error becomes
 sub-millimetre. The quantity reported is the sum of squares
-$\norm{\mathbf{e}}^{2}$ rather than the norm, so these floors correspond to a
-root-mean-square residual of the order of ten grey levels per feature
-component. The run terminates not because the residual has been minimised but
+$\norm{\mathbf{e}}^{2}$ rather than the norm, and the feature has dimension
+$264\,000$ --- four Hermite scales over the $220\times300$ interior left by the
+ten-pixel filter border --- so the floor corresponds to a root-mean-square
+residual of $19.8$ per component, against $1149$ at the first iteration. The
+run terminates not because the residual has been minimised but
 because the adaptive gain has decayed with it: by~\eqref{eq:lambda} the gain is
 proportional to the intensity error, $\lambda=\norm{\mathbf{e}_I}^{2}/
 N_{e}^{0.8}$, so it falls from $\lambda\simeq53$ at the first iteration to
@@ -74,8 +76,10 @@ Since the commanded velocity is in addition proportional to the residual
 itself, $\norm{\mathbf{V}_c}$ decays much faster than the error and had reached
 $3.7\times10^{-4}\,\mathrm{m\,s^{-1}}$ while a small misalignment remained.
 The minimisation is not at fault: over the same run the feature error fell from
-$3.1\times10^{11}$ to $1.04\times10^{8}$, by three and a half orders of
-magnitude, and the intensity error to a root-mean-square of $2.4$ grey levels.
+$3.48\times10^{11}$ to $1.04\times10^{8}$, by three and a half orders of
+magnitude, the commanded velocity from $0.566$ to
+$3.7\times10^{-4}\,\mathrm{m\,s^{-1}}$, and the intensity error from $72.7$ to
+$2.40$ grey levels root-mean-square.
 It is also worth recording that the damping term becomes inactive very early.
 By~\eqref{eq:mu}, $\mu\propto\norm{\mathbf{e}_I}^{10}$, so the same factor of
 $9\times10^{2}$ in the intensity error drives $\mu$ from $1.9\times10^{-2}$ to
@@ -98,24 +102,36 @@ commanded velocity, a run being taken as converged once
 $\norm{\mathbf{V}_c}$ falls below $10^{-3}\,\mathrm{m\,s^{-1}}$. The criterion
 stated in Section~\ref{sec:ablation-protocol} is to be read accordingly.
 
-%%% OPEN (b): DO NOT KEEP the sentence below until the diagnostic described
-%%% in diag_v3_gate.cpp has been run. computeHermiteNormalizedResidual()
-%%% returns the residual UNCHANGED unless error.getRows() equals the pixel
-%%% count. If the customized vpFeatureLuminance stacks the four Hermite
-%%% scales, error has 4 x 76800 rows, the guard fires, and Variant 3 executes
-%%% exactly the same arithmetic as Variant 2 -- which would explain the two
-%%% identical consoles far more simply than any cancellation effect. In that
-%%% case Variants 2 and 3 coinciding is a BUG, not a finding, and the sentence
-%%% below would be an unsupported claim about an inert mechanism.
-Second, Variants~2 and~3 produce the same trajectory to the precision recorded.
-This is the expected behaviour and not a defect: with no corrupted measurement
-present, the structure normalization~\eqref{eq:normalized-residual} rescales
-residuals that the Tukey function would in any case have retained, so the two
-weightings select the same measurements and the control law receives the same
-weighted normal equations. The structural information is, in other words, inert
-when there is no structure-dependent outlier to detect --- which is precisely
-what makes the occluded configurations of Section~\ref{sec:ablation-results} the
-place where it can be assessed.
+%%% =================================================================
+%%% RESOLVED, AND NOT IN OUR FAVOUR. The diagnostic has been run:
+%%%
+%%%     ### dim(error)  = 264000
+%%%     ### nbPixels    = 76800
+%%%     ### gate active = NO
+%%%
+%%% The feature has 264000 = 4 x 66000 components (four Hermite scales over
+%%% the 220 x 300 interior left by bord = 10), never 76800, so the guard in
+%%% computeHermiteNormalizedResidual() fired on every iteration of every run
+%%% and the structure normalization was never applied. Variant 3 executed the
+%%% arithmetic of Variant 2 exactly.
+%%%
+%%% Consequences, all of which must be acted on before this section is final:
+%%%   - Table 4.1 row 3 and Figure 4.4 are Variant 2 results. Row 3 must be
+%%%     removed until Variant 3 has been re-run with a working gate.
+%%%   - Any timing comparison of Variants 2 and 3 is void: Variant 3 did no
+%%%     work beyond one vector copy.
+%%%   - The paragraph that stood here claimed the two variants coincide
+%%%     because the structural information is inert in the absence of
+%%%     outliers. That claim described a bug and has been deleted. Nothing is
+%%%     yet known about how the gate behaves, occluded or not.
+%%% =================================================================
+Second, Variant~3 is reported here as identical to Variant~2 because, in the
+runs available at the time of writing, it was: the residual normalization
+%%% REWRITE once V3 has been re-run. This placeholder states the situation
+%%% honestly but is not what the final text should say.
+was not applied. The behaviour of the structure-aware weighting is therefore
+established nowhere in this section, and the comparison of Variants~2 and~3 is
+deferred entirely to Section~\ref{sec:ablation-results}.
 
 Variant~1 reaches a marginally smaller final error than the two weighted
 variants: $0.34$~mm against $0.81$~mm in translation and $0.22^{\circ}$ against
@@ -149,8 +165,11 @@ the sections that follow.
                 & $\norm{\Delta\mathbf{t}}$ & $\norm{\Delta\boldsymbol{\omega}}$ \\
         \midrule
         1 --- none    & $+0.053$ & $-0.140$ & $-0.302$ & $+0.168$ & $-0.139$ & $+0.015$ & $0.337$ & $0.219$ \\
-        2 --- Tukey   & $+0.004$ & $-0.166$ & $-0.789$ & $+0.568$ & $-0.195$ & $-0.007$ & $0.806$ & $0.601$ \\
-        3 --- Hermite & $+0.004$ & $-0.166$ & $-0.789$ & $+0.568$ & $-0.195$ & $-0.007$ & $0.806$ & $0.601$ \\
+        2 --- Tukey   & $+0.004$ & $-0.166$ & $-0.790$ & $+0.568$ & $-0.196$ & $-0.007$ & $0.807$ & $0.601$ \\
+        %%% Row 3 removed: the run that produced it had the structure
+        %%% normalization disabled by the dimension guard, so it is a
+        %%% duplicate of row 2. Restore it after re-running Variant 3.
+        3 --- Hermite & \multicolumn{8}{c}{\emph{pending re-run}} \\
         \bottomrule
     \end{tabular}
 \end{table}
