@@ -68,10 +68,22 @@ root-mean-square residual of the order of ten grey levels per feature
 component. The run terminates not because the residual has been minimised but
 because the adaptive gain has decayed with it: by~\eqref{eq:lambda} the gain is
 proportional to the intensity error, $\lambda=\norm{\mathbf{e}_I}^{2}/
-N_{e}^{0.8}$, so it falls from $\lambda\simeq53$ at the first iteration towards
-order unity, and since the commanded velocity is itself proportional to the
-residual, $\norm{\mathbf{V}_c}$ decays roughly as the cube of the misalignment
-and vanishes while a small misalignment remains. That misalignment is dominated
+N_{e}^{0.8}$, so it falls from $\lambda\simeq53$ at the first iteration to
+$\lambda=0.057$ at iteration~600, a reduction by a factor of $9\times10^{2}$.
+Since the commanded velocity is in addition proportional to the residual
+itself, $\norm{\mathbf{V}_c}$ decays much faster than the error and had reached
+$3.7\times10^{-4}\,\mathrm{m\,s^{-1}}$ while a small misalignment remained.
+The minimisation is not at fault: over the same run the feature error fell from
+$3.1\times10^{11}$ to $1.04\times10^{8}$, by three and a half orders of
+magnitude, and the intensity error to a root-mean-square of $2.4$ grey levels.
+It is also worth recording that the damping term becomes inactive very early.
+By~\eqref{eq:mu}, $\mu\propto\norm{\mathbf{e}_I}^{10}$, so the same factor of
+$9\times10^{2}$ in the intensity error drives $\mu$ from $1.9\times10^{-2}$ to
+$2.9\times10^{-17}$: the scheme is a Levenberg--Marquardt method only during
+the first few iterations and a Gauss--Newton method thereafter, which is why
+the fixed floor added to the damped Hessian in Section~\ref{sec:implementation}
+is what actually guarantees invertibility once robust rejection is active.
+That misalignment is dominated
 by its rotational part: $\norm{\Delta\boldsymbol{\omega}}=0.22^{\circ}$ for
 Variant~1 and $0.60^{\circ}$ for the weighted variants correspond, at
 $f=870$~px, to image displacements of approximately $3$ and $9$~pixels, whereas
