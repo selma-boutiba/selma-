@@ -1,43 +1,51 @@
 % ======================================================================
-%  Section 4.7.1 --- revised: prose + corrected Table 4.1
+%  Section 4.7.1 --- Nominal case. Replacement text.
 %
-%  Replaces the current 4.7.1, which has figures and a table but no text.
+%  WHICH VARIANT 3 THIS DESCRIBES: the DC-free gate, in which the
+%  structure measure of eq (4.9) is built from the FIRST-ORDER Hermite
+%  kernels D_{1,0} and D_{0,1} at sigma2, sigma3, sigma4. Those kernels are
+%  odd and so have exactly zero DC gain, which is what makes eq (4.9) a
+%  structure measure and Section 4.4.1's band-pass claim true of the code.
 %
-%  UNIT CORRECTIONS APPLIED (see the accompanying message):
-%    vpPoseVector stores translation in METRES and rotation as a theta-u
-%    vector in RADIANS. The previous table carried the raw console values
-%    under "mm" and "deg" headers, making every translation 1000x too
-%    small and every rotation 57.3x too small.
+%  An earlier formulation built G from the SUMMED kernels Dnm2..Dnm4. Their
+%  DC gain equals their L1 norm to three decimal places, so G was a
+%  smoothed intensity; measured on the structure map, the mean gradient was
+%  6.2% of the mean level and 62.8% of pixels lay within a tenth of their
+%  own 9x9 local mean. With the first-order kernels those become 26.2% and
+%  18.8%. That earlier version reached a SMALLER final error (0.089 deg
+%  against 0.385 deg in rotation). It is reported in Section 4.4.4 as an
+%  ablation of the structure measure and left for future work; the method
+%  of record is the DC-free one, which is the one Section 4.4 describes.
 %
-%  All values are at iteration 600 for all three variants.
-%  STILL OPEN, marked %%% OPEN below: whether Variants 2 and 3 genuinely
-%  coincide, or whether the two consoles supplied are the same run.
+%  DELIBERATELY NOT CLAIMED HERE: any ranking of the variants. There is one
+%  run per variant at one initial pose, and the differences are of the same
+%  order as the spread a different displacement would plausibly produce.
+%  The ablation rests on Section 4.7.2. Do not strengthen this without
+%  first running the multi-pose study.
 % ======================================================================
 
-\subsection{Nominal case}
+\subsection{Nominal case: behaviour without occlusion}
 \label{sec:nominal}
 
-Before occlusion is introduced, it is necessary to establish what the three
-variants do when there is nothing to reject. Two distinct questions are settled
-by this run. The first is what the weighted formulations cost when there is
-nothing to reject: Remark~\ref{rem:baseline} establishes algebraically that
+The three variants are first compared on the clean target, with no occlusion
+present. Two questions are settled by this run. The first is what the weighted
+formulations cost when there is nothing to reject:
+Remark~\ref{rem:baseline} establishes algebraically that
 $\mathbf{D}=\mathbf{I}$ reduces~\eqref{eq:robust-lm-law} to the control law of
-Chapter~\ref{ch:herpvs}, but says nothing about $\mathbf{D}\neq\mathbf{I}$ on
-uncorrupted measurements, and that is what the nominal run measures. The second
-is a matter of attribution: the nominal behaviour of each variant must be known
-before any difference observed under occlusion can be ascribed to the treatment
-of the occlusion rather than to the weighting altering the control law
-independently of it. As will be seen, the three variants do \emph{not} coincide
-on a clean scene, which makes this baseline indispensable rather than merely
-confirmatory.
+Chapter~\ref{ch:herpvs}, but it says nothing about $\mathbf{D}\neq\mathbf{I}$
+acting on uncorrupted measurements, and that is what the nominal run measures.
+The second is a matter of attribution: the nominal behaviour of each variant
+must be known before any difference observed under occlusion can be ascribed
+to the treatment of the occlusion rather than to the weighting altering the
+control law independently of it.
 
 \paragraph{Conditions.}
 The reference image $\mathbf{I}^{*}$ is acquired from the unoccluded target at
 the desired pose $\mathbf{t}^{*}=(0,0,1300)\,\mathrm{mm}$,
 $\boldsymbol{\omega}^{*}=(0,0,0)^{\circ}$, at which the target overfills the
-image. For the nominal run alone, the images acquired during servoing are also
-taken from the unoccluded target, so that the residual arises solely from the
-pose error and no measurement is corrupted. Servoing starts from
+image. For the nominal run the images acquired during servoing are also taken
+from the unoccluded target, so the residual arises solely from the pose error
+and no measurement is corrupted. Servoing starts from
 $\mathbf{t}_{0}=(40,-40,1100)\,\mathrm{mm}$,
 $\boldsymbol{\omega}_{0}=(12,-12,6)^{\circ}$, a displacement of approximately
 $41$~pixels in the mean and $65$~pixels at worst, with the target covering the
@@ -46,145 +54,108 @@ remaining quantities --- the Hermite bank and its four scales, the interaction
 matrix~\eqref{eq:stacked-L}, the adaptive gain and
 damping~\eqref{eq:lambda}--\eqref{eq:mu}, the Tukey constant, the sampling
 period and the iteration cap --- are those fixed in
-Section~\ref{sec:ablation-protocol} and are identical across the three variants.
-That the three runs did begin from the same image is confirmed by the reference
-error norm $N_{ei}$, which took the same value $4.04\times10^{8}$ in all three.
+Section~\ref{sec:ablation-protocol} and are identical across the three
+variants. That the three runs began from the same image is confirmed by the
+initial intensity error, which took the same value $4.06\times10^{8}$ in all
+three.
+
+The feature vector has $264\,000$ components: the four Hermite scale responses
+over the $220\times300$ interior region left by the ten-pixel border the
+$9\times9$ filters cannot reach.
 
 \paragraph{Results.}
 Figures~\ref{fig:v1}--\ref{fig:v3} show the camera velocities, the positioning
-error and the feature error against iteration for the three variants, and
+error and the feature error against iteration, and
 Table~\ref{tab:ch4-nominal} collects the final pose errors. All three variants
-position the camera to better than one millimetre and better than one degree,
-which is the accuracy expected of a direct scheme at convergence. Within that,
-Variant~3 attains the smallest rotational error of the three by a wide margin:
-$0.089^{\circ}$, against $0.219^{\circ}$ for the unweighted baseline and
-$0.601^{\circ}$ for plain Tukey weighting. Its translational error,
-$0.825$~mm, matches Variant~2's and is dominated by the depth component, the
-weakest-conditioned direction of a direct scheme.
+position the camera to better than one millimetre and better than
+half a degree, which is the accuracy expected of a direct scheme at
+convergence, and no curve exhibits a plateau, a rebound or a secondary
+minimum.
 
 Two observations require comment, as both bear on how the remaining sections
 must be read.
 
 First, the feature error does not decay to zero but settles on a floor:
-$4.35\times10^{7}$ for Variant~1, $1.04\times10^{8}$ for Variant~2 and
-$6.59\times10^{7}$ for Variant~3, while the commanded velocity falls to between
-$2.9\times10^{-5}$ and $3.7\times10^{-4}\,\mathrm{m\,s^{-1}}$ and the pose
+$4.35\times10^{7}$, $1.04\times10^{8}$ and $6.48\times10^{7}$ for
+Variants~1,~2 and~3, while the commanded velocity falls to between
+$1.4\times10^{-4}$ and $3.7\times10^{-4}\,\mathrm{m\,s^{-1}}$ and the pose
 error becomes sub-millimetre. The quantity reported is the sum of squares
-$\norm{\mathbf{e}}^{2}$ rather than the norm, and the feature has dimension
-$264\,000$ --- four Hermite scales over the $220\times300$ interior left by the
-ten-pixel filter border --- so the floor corresponds to a root-mean-square
-residual of $19.8$ per component, against $1149$ at the first iteration. The
-run terminates not because the residual has been minimised but
-because the adaptive gain has decayed with it: by~\eqref{eq:lambda} the gain is
-proportional to the intensity error, $\lambda=\norm{\mathbf{e}_I}^{2}/
-N_{e}^{0.8}$, so it falls from $\lambda\simeq53$ at the first iteration to
-$\lambda=0.057$ at iteration~600, a reduction by a factor of $9\times10^{2}$.
+$\norm{\mathbf{e}}^{2}$ rather than the norm, so over $264\,000$ components the
+floor corresponds to a root-mean-square residual of about $16$ per component,
+against $1149$ at the first iteration. The run terminates not because the
+residual has been minimised but because the adaptive gain has decayed with it:
+by~\eqref{eq:lambda} the gain is proportional to the intensity error,
+$\lambda=\norm{\mathbf{e}_I}^{2}/N_{e}^{0.8}$, so it falls from
+$\lambda\simeq53$ at the first iteration to $\lambda=0.041$ at iteration~600.
 Since the commanded velocity is in addition proportional to the residual
-itself, $\norm{\mathbf{V}_c}$ decays much faster than the error and had reached
-$3.7\times10^{-4}\,\mathrm{m\,s^{-1}}$ while a small misalignment remained.
-The minimisation is not at fault: over the same run the feature error fell from
-$3.48\times10^{11}$ to $1.04\times10^{8}$, by three and a half orders of
-magnitude, the commanded velocity from $0.566$ to
-$3.7\times10^{-4}\,\mathrm{m\,s^{-1}}$, and the intensity error from $72.7$ to
-$2.40$ grey levels root-mean-square.
-It is also worth recording that the damping term becomes inactive very early.
-By~\eqref{eq:mu}, $\mu\propto\norm{\mathbf{e}_I}^{10}$, so the same factor of
-$9\times10^{2}$ in the intensity error drives $\mu$ from $1.9\times10^{-2}$ to
-$2.9\times10^{-17}$: the scheme is a Levenberg--Marquardt method only during
-the first few iterations and a Gauss--Newton method thereafter, which is why
-the fixed floor added to the damped Hessian in Section~\ref{sec:implementation}
-is what actually guarantees invertibility once robust rejection is active.
-That misalignment is dominated
-by its rotational part: at $f=870$~px the final rotational errors correspond to
-image displacements of $3.33$~pixels for Variant~1, $9.13$ for Variant~2 and
-$1.35$ for Variant~3, whereas the translational errors, all below a
-millimetre at $Z=1.3$~m, correspond to less than a tenth of a pixel.
+itself, $\norm{\mathbf{V}_c}$ decays much faster than the error and vanishes
+while a small misalignment remains. The minimisation is not at fault: over the
+same run the feature error falls by three and a half orders of magnitude, the
+commanded velocity from $0.566$ to $2.3\times10^{-4}\,\mathrm{m\,s^{-1}}$, and
+the intensity error from $72.7$ to $2.5$ grey levels root-mean-square. It is
+also worth recording that the damping becomes inactive very early:
+by~\eqref{eq:mu}, $\mu\propto\norm{\mathbf{e}_I}^{10}$, so $\mu$ falls from
+$1.9\times10^{-2}$ to $5.3\times10^{-18}$ over the same run. The scheme is a
+Levenberg--Marquardt method only during the first few iterations and a
+Gauss--Newton method thereafter, which is why the fixed floor added to the
+damped Hessian in Section~\ref{sec:implementation} is what actually guarantees
+invertibility once robust rejection is active.
 
-These displacements account for the floors in order of magnitude but not in
-detail. The floors rank $4.35\times10^{7}$, $6.59\times10^{7}$,
-$1.04\times10^{8}$ for Variants~1,~3,~2, whereas the misalignments rank
-$1.35$, $3.33$, $9.13$~pixels for Variants~3,~1,~2: Variant~3 attains the
-smallest misalignment but only the middle floor. The discrepancy is to be
-expected, since the residual of a weighted variant is shaped not only by the
-misalignment but by which measurements the estimator retains, and the floor
-therefore mixes an accuracy term with a coverage term. The feature error is
-accordingly reported throughout this chapter as a convergence indicator
-only; the pose error of Table~\ref{tab:ch4-nominal} is the accuracy metric.
-The
-absolute threshold $\norm{\mathbf{e}}^{2}>10^{4}$ inherited from the
-implementation lies more than three orders of magnitude below this floor and is
-never reached, so convergence is reported throughout this chapter against the
-commanded velocity, a run being taken as converged once
-$\norm{\mathbf{V}_c}$ falls below $10^{-3}\,\mathrm{m\,s^{-1}}$. The criterion
-stated in Section~\ref{sec:ablation-protocol} is to be read accordingly.
+Second, and more consequentially, the feature error is \emph{not} a proxy for
+positioning accuracy across variants, and must not be read as one. The two
+weighted variants illustrate this directly: an alternative structure measure,
+reported in Section~\ref{sec:ablation-measure}, attains a feature-error floor
+of $6.59\times10^{7}$ against $6.48\times10^{7}$ here --- a difference of two
+per cent --- while its rotational pose error differs by a factor of four. The
+reason is that the residual of a weighted variant is shaped not only by the
+misalignment but by which measurements the estimator retains, so the floor
+mixes an accuracy term with a coverage term. Throughout this chapter the
+feature error is therefore reported as a convergence indicator only, and the
+pose error of Table~\ref{tab:ch4-nominal} is the accuracy metric. The absolute
+threshold $\norm{\mathbf{e}}^{2}>10^{4}$ inherited from the implementation lies
+more than three orders of magnitude below the floor and is never reached, so
+convergence is reported against the commanded velocity, a run being taken as
+converged once $\norm{\mathbf{V}_c}$ falls below
+$10^{-3}\,\mathrm{m\,s^{-1}}$. The criterion stated in
+Section~\ref{sec:ablation-protocol} is to be read accordingly.
 
-Second, the residual normalization is \emph{not} transparent in the nominal
-case, and this is the more consequential of the two observations.
-Remark~\ref{rem:baseline} guarantees only that $\mathbf{D}=\mathbf{I}$ recovers
-the control law of Chapter~\ref{ch:herpvs}; it says nothing about the case
-$\mathbf{D}\neq\mathbf{I}$ with no outlier present, and the run shows that
-case to be far from neutral. Every indicator moves in the same direction.
-The commanded velocity at iteration~600 is $2.88\times10^{-5}$ against
-$3.68\times10^{-4}\,\mathrm{m\,s^{-1}}$ for Variant~2, a factor of thirteen;
-the adaptive gain has fallen further, $\lambda=0.0365$ against $0.0572$; the
-intensity error is $1.91$ against $2.40$ grey levels root-mean-square; and
-the rotational pose error is smaller by a factor of $6.8$. Variant~3 has not
-merely stalled at a different point --- it has descended further along the
-same cost function.
+\paragraph{What the nominal case does and does not establish.}
+The three variants do not coincide on a clean scene. Weighting is therefore not
+transparent in the absence of outliers, and the differences in
+Table~\ref{tab:ch4-nominal} are real rather than numerical: Variant~2 reaches a
+rotational error of $0.60^{\circ}$ against the baseline's $0.22^{\circ}$, which
+is the cost anticipated in Section~\ref{sec:tukey-limitation} --- while the pose
+error is still large, valid measurements in photometrically sensitive regions
+produce legitimately large residuals, a fraction of which a redescending
+estimator rejects, so a weighted variant discards information the unweighted
+scheme retains. Variant~3 recovers part of that loss, reaching $0.38^{\circ}$,
+which is consistent with the structure normalization restoring measurements
+that the unnormalized estimator rejects on the strength of their residual
+alone.
 
-The mechanism, however, is not the one Section~\ref{sec:hermite-gate} claims.
-%%% ---------------------------------------------------------------
-%%% This paragraph is not optional. The gate as implemented derives
-%%% structG from w_h/w_v/w_d, which are the image filtered by the summed
-%%% Hermite kernels; those kernels have a DC gain equal to their L1 norm
-%%% to three decimal places, so structG tracks local INTENSITY, not local
-%%% structure. Measured on this run, normalization inflates the residual
-%%% energy 15.5-fold, which against the floor of 0.1 on Gbar places of
-%%% order a sixth of the image at or near the clamp. Writing the result
-%%% above as a vindication of structure-aware weighting would therefore
-%%% overclaim, and a reader who inspects the kernels will find it out.
-%%% Either re-run with the DC-free first-order kernels and report that, or
-%%% keep this paragraph. Do not delete it and keep the result.
-%%% ---------------------------------------------------------------
-The summed Hermite kernels $\mathbf{D}_{nm}$ are low-pass dominated --- their
-DC gain equals their $L_1$ norm to three decimal places --- so the quantity
-$G$ of~\eqref{eq:structG} tracks local \emph{intensity} rather than local
-structure, and the normalization amplifies residuals in dark regions rather
-than in geometrically flat ones. On this image the normalization inflates the
-residual energy $15.5$-fold, which given the floor of $0.1$ imposed
-on~\eqref{eq:gbar} places of the order of a sixth of the image at the clamp.
-What the nominal run establishes, then, is that a per-pixel heteroscedastic
-rescaling of the residual improves the convergence of the robust scheme
-substantially; it does not yet establish that the improvement comes from
-structure. Section~\ref{sec:dc-free} isolates that question by repeating the
-experiment with a first-order, and therefore exactly DC-free, structure
-measure.
-
-The comparison with the unweighted baseline separates cleanly into the two
-degrees of freedom. In translation, Variant~1 is the most accurate of the
-three, $0.34$~mm against $0.81$ and $0.83$~mm, the deficit of both weighted
-variants lying almost entirely in the depth component. This is the cost
-anticipated in Section~\ref{sec:tukey-limitation}: while the pose error is
-still large, valid measurements in photometrically sensitive regions produce
-legitimately large residuals, a fraction of which a redescending estimator
-rejects, so the weighted variants discard information the unweighted scheme
-retains --- and depth, being the direction the luminance interaction matrix
-constrains least, is the first to suffer. In rotation the ordering reverses:
-Variant~1's $0.22^{\circ}$ is bettered by Variant~3's $0.089^{\circ}$, so the
-normalized weighting does not merely recover the accuracy that plain Tukey
-weighting costs but improves on the baseline. Taken together, the nominal case
-shows that robust weighting is not free in the absence of outliers, as
-Section~\ref{sec:tukey-limitation} predicted, but that the penalty is confined
-to depth once the residual is normalized.
+No ordering of the three is asserted on this evidence. These are single runs
+from a single initial displacement, and differences of a few tenths of a degree
+are of the same order as the spread a different displacement would plausibly
+produce; establishing a ranking would require the study over several initial
+poses that Section~\ref{sec:future} identifies as outstanding. What the nominal
+case establishes is narrower and sufficient for what follows: that all three
+variants converge, that none is destabilized by the weighting, that the penalty
+for weighting a clean scene is confined to a few tenths of a degree in
+rotation and a fraction of a millimetre in translation, and that this penalty
+must be subtracted from any advantage observed under occlusion. The decisive
+comparison of the chapter is accordingly the one made in
+Section~\ref{sec:ablation-results}, where the measurements are corrupted and
+the weighting has something to reject.
 
 \begin{table}[t]
     \centering
-    \caption{Nominal case (unoccluded target): final pose error, from the
-    desired pose $(0,0,1300)\,\mathrm{mm}$, $(0,0,0)^{\circ}$. Translations in
-    millimetres, rotations in degrees. No run reached the absolute threshold on
-    $\norm{\mathbf{e}}$; all three satisfied
-    $\norm{\mathbf{V}_c}<10^{-3}\,\mathrm{m\,s^{-1}}$. All values are taken at
-    iteration~600, images of $320\times240$ pixels.}
+    \caption{Nominal case (unoccluded target): final pose error at
+    iteration~600, relative to the desired pose $(0,0,1300)\,\mathrm{mm}$,
+    $(0,0,0)^{\circ}$. Translations in millimetres, rotations in degrees.
+    No run reached the absolute threshold on $\norm{\mathbf{e}}^{2}$; all three
+    satisfied $\norm{\mathbf{V}_c}<10^{-3}\,\mathrm{m\,s^{-1}}$. Images of
+    $320\times240$ pixels; feature dimension $264\,000$. One run per variant:
+    see the discussion above on what may and may not be concluded.}
     \label{tab:ch4-nominal}
     \small
     \begin{tabular}{@{}lrrrrrrrr@{}}
@@ -197,20 +168,52 @@ to depth once the residual is normalized.
                 & $\Delta\omega_x$ & $\Delta\omega_y$ & $\Delta\omega_z$
                 & $\norm{\Delta\mathbf{t}}$ & $\norm{\Delta\boldsymbol{\omega}}$ \\
         \midrule
-        1 --- none    & $+0.053$ & $-0.140$ & $-0.302$ & $+0.168$ & $-0.139$ & $+0.015$ & $0.337$ & $0.219$ \\
-        2 --- Tukey   & $+0.004$ & $-0.166$ & $-0.790$ & $+0.568$ & $-0.196$ & $-0.007$ & $0.807$ & $0.601$ \\
-        3 --- Hermite & $+0.098$ & $+0.136$ & $+0.808$ & $-0.072$ & $+0.048$ & $+0.022$ & $0.825$ & $\mathbf{0.089}$ \\
+        1 --- none    & $+0.053$ & $-0.140$ & $-0.301$ & $+0.168$ & $-0.139$ & $+0.015$ & $0.336$ & $0.219$ \\
+        2 --- Tukey   & $+0.004$ & $-0.165$ & $-0.789$ & $+0.568$ & $-0.195$ & $-0.007$ & $0.806$ & $0.601$ \\
+        3 --- Hermite & $+0.101$ & $-0.084$ & $-0.990$ & $+0.383$ & $-0.030$ & $+0.019$ & $0.999$ & $0.385$ \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-%%% OPEN: whether Variants 2 and 3 genuinely coincide. The two consoles
-%%% supplied agree to every printed digit on |e|, lambda, mu, |Vc| and all
-%%% six pose components. Three explanations remain, in decreasing order of
-%%% likelihood:
-%%%   (1) the dimension guard in computeHermiteNormalizedResidual() fires,
-%%%       so Variant 3 runs as Variant 2 -- test with diag_v3_gate.cpp;
-%%%   (2) the two consoles are two runs of the same binary;
-%%%   (3) the normalization genuinely cancels in the MAD, which is the only
-%%%       one of the three that would support the prose above.
-%%% Settle (1) before anything else: it is a one-line test.
+% ======================================================================
+%  REMAINING EDITS ELSEWHERE IN THE CHAPTER, for consistency with the above
+%  (each is a deletion or a one-line fix, none needs a new run):
+%
+%  1. DELETE Table 4.2 and the paragraph introducing it. The timing is
+%     noise: the DC-free Variant 3 performs six additional 9x9 convolutions
+%     per iteration and measured 391 ms against the earlier version's
+%     1064 ms, i.e. 2.7 times faster while doing strictly more work. If a
+%     cost figure is wanted, re-measure with the display disabled --- note
+%     that -d does not work, because init() shadows opt_display with its
+%     own local --- and report a mean over several runs. The plausible
+%     figure is 391/314 = 1.24, not 3.38.
+%
+%  2. Section 4.4.2: eq (4.9) must state that G is built from the
+%     FIRST-ORDER kernels D_{1,0}, D_{0,1} at the three coarser scales, not
+%     from the summed responses w_h, w_v, w_d. As written, the text does not
+%     match the method of record. The sentence excluding the finest scale
+%     stays, but its justification changes: the exclusion is by scale, not
+%     because "the response remains close to raw intensity".
+%
+%  3. Section 4.4.4: add the ablation paragraph on the intensity-based
+%     measure. Figures: the two structure maps side by side make the point
+%     in one glance.
+%
+%  4. Table 4.1 units: the values above are in mm and degrees. The previous
+%     version of this table carried raw metres and radians under mm and
+%     degree headers.
+%
+%  5. Broken references: Section ?? / Chapter ?? twice in 4.5, Remark ?? in
+%     4.7.1, Section ?? in 4.7.3. The square brackets around the two
+%     remarks in 4.2.2 indicate a broken remark environment, which is also
+%     why Remark 4.2.2 does not resolve.
+%
+%  6. Section 4.6.3 "Test configurations" is an empty heading.
+%
+%  7. Section 4.6.4 promises weight maps; amend to Variants 2 and 3 only,
+%     since Variant 1 has D = I and its map is uniformly white.
+%
+%  8. Eq (4.14): the hat spans DL_R instead of the whole term.
+%     Section 4.4.3, p.68: "the normalized residual is reduced,," --- double
+%     comma.
+% ======================================================================
