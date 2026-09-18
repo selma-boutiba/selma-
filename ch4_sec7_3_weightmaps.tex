@@ -1,120 +1,181 @@
 % ======================================================================
 %  Section 4.7.3 --- Weight maps.  Replaces the empty heading on p.75.
+%  This supersedes the earlier draft, which was built on the occluded
+%  structure and weight maps alone and made a weaker claim.
 %
-%  FIGURES REQUIRED (two of the three already exist):
-%    figures/gmap_v3_occluded_12.png   structure measure G, occluded, iter 12
-%    figures/wmap_v3_occluded_12.png   Tukey weights,      occluded, iter 12
-%    figures/wmap_v3_occluded_600.png  Tukey weights,      occluded, iter 600
-%                                      <-- STILL TO PRODUCE: set the save
-%                                      condition to iter == 2 || iter == 601
+%  FIGURES (all four exist):
+%    figures/wmap_v3_nom_iter1.png     nominal,  iteration 1
+%    figures/wmap_v3_nom_iter600.png   nominal,  iteration 600
+%    figures/wmap_v3_occ_iter1.png     occluded, iteration 1
+%    figures/wmap_v3_occ_iter600.png   occluded, iteration 600
 %
-%  Section 4.6.4 currently promises weight maps for Variants 2 and 3. Only
-%  Variant 3 produces them at present. Either add saveMaps() to Variant 2 or
-%  amend 4.6.4 to promise Variant 3 alone. Variant 1 has D = I and its map is
-%  uniformly white, so it should not be promised at all.
+%  MEASURED VALUES, interior region of 66000 measurements, weights in [0,1]:
+%
+%    map                mean w   w<=0.01   w<0.25   w>=0.99
+%    nominal  iter 1     0.768      3.5%    13.6%     24.7%
+%    nominal  iter 600   0.789      0.3%     3.2%     14.1%
+%    occluded iter 1     0.751      4.2%    16.0%     26.8%
+%    occluded iter 600   0.719      9.5%    14.2%     17.8%
+%
+%    occluder = 4858 connected measurements = 7.4% of 66000
+%
+%  ALL FOUR PANELS ARE WEIGHT MAPS. The structure maps are NOT used here:
+%  their statistics barely change with iteration (nominal 0.306 -> 0.308,
+%  occluded 0.300 -> 0.304) because G depends on the image and not on the
+%  pose, so one suffices and it belongs in Section 4.4.2 beside eq (4.9),
+%  paired with the intensity-based map as the ablation of the measure.
 %
 %  NOT CLAIMED HERE, DELIBERATELY: that the rejected region is the occluder
-%  dilated by the filter support (Section 4.3.2). Measured on these maps the
-%  rejected region is 2367 px against 4858 px for the flat region of G, i.e.
-%  SMALLER, because the retained boundary rim eats into it and because the
-%  weights are graded rather than binary. Establishing the dilation would
-%  require measuring against the ellipse in the texture file itself, at a
-%  stated weight threshold. Do not assert it from these figures.
+%  dilated by the filter support (Section 4.3.2). Measured against the
+%  structure map the rejected region is SMALLER, 2367 px against 4858,
+%  because the retained boundary rim eats into it and the weights are graded
+%  rather than binary. Establishing the dilation needs a measurement against
+%  the ellipse in the texture file at a stated threshold.
 % ======================================================================
 
 \subsection{Weight maps}
 \label{sec:weight-maps}
 
-The quantitative results of Section~\ref{sec:ablation-results} establish that
-the weighting recovers the pose under occlusion, but not that it does so for
-the reason the method claims. The weights $w_j$ and the structure measure
-$G(p)$ are both defined per measurement, so both can be displayed at their
-image positions, and together they show the mechanism directly.
+The pose errors of Sections~\ref{sec:nominal} and~\ref{sec:ablation-results}
+establish what the weighting achieves but not how. Since the weights $w_j$ are
+defined one per measurement, they can be displayed at their image positions,
+and doing so for both scene conditions at the beginning and the end of the
+servo makes the mechanism directly observable.
+Figure~\ref{fig:wmaps} collects the four maps: white denotes a retained
+measurement, $w_j=1$, black a rejected one, $w_j=0$, and the ten-pixel border
+that the $9\times9$ filters cannot reach carries no measurement and is shown
+mid-grey so as not to be read as rejection. The accompanying statistics are
+collected in Table~\ref{tab:weight-stats}.
 
-Figure~\ref{fig:maps-occluded} shows the two maps for Variant~3 at
-iteration~12 of the occluded run. In the weight map, white denotes a retained
-measurement, $w_j=1$, and black a rejected one, $w_j=0$; the ten-pixel border
-that the filters cannot reach carries no measurement and is shown mid-grey so
-that it is not mistaken for rejection. In the structure map, brightness is
-proportional to $G(p)$, scaled so that three times the image mean saturates.
+\paragraph{At the start of the servo the estimator cannot tell the two scenes
+apart.}
+At iteration~1 the clean and the occluded maps are almost
+indistinguishable: the mean weight is $0.768$ against $0.751$, and the
+fraction of measurements rejected outright is $3.5\%$ against $4.2\%$. In
+neither case does the occluding disc stand out, and in the occluded case the
+$4.2\%$ rejected is in fact \emph{less} than the $7.4\%$ of measurements the
+disc covers --- the occluder is not yet being rejected at all. The reason is
+the robust scale. With the initial misalignment of some $41$~pixels the
+residual is large over the whole image, so the median absolute
+deviation~\eqref{eq:mad} is large in proportion, and no group of measurements
+is extreme relative to it. What rejection does occur is diffuse and spread
+across the frame, and since the clean scene contains nothing to reject, all
+$13.6\%$ of its strongly down-weighted measurements are valid ones. This is
+precisely the difficulty anticipated in Section~\ref{sec:tukey-limitation},
+and the nominal map at iteration~1 is its direct measurement.
 
-\paragraph{The occluder.}
-In the structure map the occluding disc appears as a region of \emph{zero}
-response, $G<0.02\,\bar{G}$ over a connected area of $4858$ pixels --- $7.4\%$
-of the $66\,000$ measurements --- bounded by a bright rim that traces its
-outline exactly. This is the behaviour required of a structure measure built
-from first-order Gauss--Hermite kernels: the interior of the disc is uniform,
-so its derivative response vanishes, while its boundary is a step edge and
-produces the largest response in the image. The corresponding region of the
-weight map is dark, and is likewise ringed by retained measurements.
+\paragraph{By convergence the two have separated completely.}
+At iteration~600 the clean scene rejects $0.3\%$ of measurements outright and
+carries only $3.2\%$ below a quarter weight: the map is white but for a faint
+tracery along the strongest edges, where a residual misalignment of a fraction
+of a pixel still registers. The weighting has become, to within a third of a
+percent, the identity. This is the empirical counterpart of
+Remark~\ref{rem:baseline} that the pose errors of Section~\ref{sec:nominal}
+could not supply: it is one thing to observe that the weighted variants
+converge, and another to see that at convergence they have stopped weighting
+anything at all.
 
-The chain from~\eqref{eq:structG} to the control law is therefore visible end
-to end. Inside the occluder $G$ vanishes, so $\bar{G}$ meets the floor
-$\bar{G}_{\min}=0.1$ of~\eqref{eq:gbar}, the normalized residual
-of~\eqref{eq:normalized-residual} is inflated tenfold, and the Tukey function
-rejects it. On the boundary $G$ is maximal, the residual is reduced, and the
-measurement is retained --- correctly, since the boundary of the occluder is
-genuine image structure whose displacement does carry pose information.
-Elsewhere $\bar{G}\approx1$ and the weighting is close to inert.
+The occluded scene at the same iteration rejects $9.5\%$. The disc appears as
+a solid, sharply bounded black region, and $9.5\%$ is the $7.4\%$ it covers
+together with some two percent of edge response of the same kind as in the
+clean map. The rejection is no longer diffuse: it has concentrated onto
+exactly the measurements that are corrupted.
 
-It is worth emphasising that this mechanism turns on the \emph{uniformity} of
-the occluded region and not on its intensity. The structure measure adopted in
-Section~\ref{sec:hermite-gate} has exactly zero DC gain, so a uniform bright
-occluder would produce the same vanishing response and be rejected
-identically. The limitation recorded in Section~\ref{sec:acknowledged} is
-therefore the correct one to state, and is the only one: a \emph{textured}
-occluder would produce a large $G$ and would not be suppressed by this
-mechanism, whereas a uniform one is suppressed whatever its brightness.
+\paragraph{The discrimination is a product of convergence, not a precondition
+for it.}
+Read together, the four panels describe a mechanism that sharpens as the
+servo proceeds. While the pose error is large the misalignment residual
+dominates, the robust scale is large, and the estimator discriminates poorly
+in both scenes alike. As the pose error falls the misalignment residual
+collapses, the scale falls with it, and the occluder --- whose residual does
+not fall, because no pose can cancel it --- becomes the only large residual in
+the image and is rejected decisively. Robust weighting and pose convergence
+therefore reinforce one another rather than the weighting simply enabling the
+convergence, and the effect is visible in the figure as the divergence of the
+right-hand column from the left.
 
-\paragraph{Rejection away from the occluder.}
-The maps also make visible an effect that Section~\ref{sec:tukey-limitation}
-predicts but that the pose errors alone cannot show. At iteration~12 the mean
-weight over the image is $0.75$, $4.2\%$ of measurements are rejected outright
-and $16.0\%$ carry a weight below $0.25$. Since the occluder accounts for only
-$7.4\%$ of the measurements, more than half of the strongly down-weighted
-measurements lie outside it and are not corrupted at all. They are valid
-measurements in photometrically sensitive regions whose residuals are
-legitimately large because the misalignment is still gross, and which a
-redescending estimator consequently rejects. This is the cost identified in
-Section~\ref{sec:tukey-limitation}, quantified: early in the run the estimator
-discards roughly twice as much information as the occlusion alone requires.
+Two consequences follow for how the preceding sections are read. First, the
+cost identified in Section~\ref{sec:tukey-limitation} is real but transient:
+it is largest when the pose error is largest and has all but vanished by
+convergence, falling from $13.6\%$ to $3.2\%$ of measurements in the clean
+scene. Second, the failure of Variant~1 under occlusion reported in
+Section~\ref{sec:ablation-results} is not attributable to any single
+catastrophic iteration but to the accumulation of a bias that the weighted
+variants remove progressively, and which they remove most effectively
+precisely when the remaining pose error is smallest.
 
-%%% FIGURE STILL TO PRODUCE --- see the header note. Once wmap at iteration
-%%% 600 exists, this paragraph completes the argument; until then, delete it
-%%% rather than describe a figure that does not exist.
-Figure~\ref{fig:wmap-converged} shows the same map at iteration~600. The
-scattered rejection has resolved and what remains is the occluder alone,
-confirming that the effect above is transient and confined to the phase in
-which the residual distribution has not yet contracted. The two panels
-together bound the cost of robust weighting in time as well as in magnitude.
+\begin{table}[t]
+    \centering
+    \caption{Distribution of the Tukey weights of Variant~3 over the
+    $66\,000$ measurements of the interior region, for the clean and occluded
+    scenes at the first and last iteration. The occluding disc covers $7.4\%$
+    of the measurements.}
+    \label{tab:weight-stats}
+    \small
+    \begin{tabular}{@{}llrrrr@{}}
+        \toprule
+        Scene & Iteration & $\bar{w}$ & $w_j\le0.01$ & $w_j<0.25$ & $w_j\ge0.99$ \\
+        \midrule
+        clean    & $1$   & $0.768$ & $3.5\%$ & $13.6\%$ & $24.7\%$ \\
+        clean    & $600$ & $0.789$ & $0.3\%$ & $\phantom{0}3.2\%$ & $14.1\%$ \\
+        occluded & $1$   & $0.751$ & $4.2\%$ & $16.0\%$ & $26.8\%$ \\
+        occluded & $600$ & $0.719$ & $9.5\%$ & $14.2\%$ & $17.8\%$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
 
 \begin{figure}[t]
     \centering
-    \begin{subfigure}[b]{0.48\textwidth}
+    \begin{subfigure}[b]{0.46\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{figures/gmap_v3_occluded_12.png}
-        \caption{structure measure $G(p)$}
+        \includegraphics[width=\textwidth]{figures/wmap_v3_nom_iter1.png}
+        \caption{clean scene, iteration~1}
     \end{subfigure}
     \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
+    \begin{subfigure}[b]{0.46\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{figures/wmap_v3_occluded_12.png}
-        \caption{Tukey weights $w_j$}
+        \includegraphics[width=\textwidth]{figures/wmap_v3_nom_iter600.png}
+        \caption{clean scene, iteration~600}
     \end{subfigure}
-    \caption{Variant~3 under occlusion, iteration~12. (a) The structure
-    measure~\eqref{eq:structG}: the occluding disc gives a vanishing response
-    over its uniform interior and the largest response in the image along its
-    boundary. (b) The resulting weights: white retained, black rejected,
-    mid-grey the filter border, which carries no measurement. The disc is
-    rejected and its boundary retained.}
-    \label{fig:maps-occluded}
+
+    \vspace{1em}
+
+    \begin{subfigure}[b]{0.46\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/wmap_v3_occ_iter1.png}
+        \caption{occluded scene, iteration~1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.46\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/wmap_v3_occ_iter600.png}
+        \caption{occluded scene, iteration~600}
+    \end{subfigure}
+    \caption{Tukey weights of Variant~3 displayed at their image positions:
+    white retained, black rejected, mid-grey the filter border, which carries
+    no measurement. At the first iteration (left column) the two scenes are
+    almost indistinguishable and the occluder is not yet isolated, the
+    residual being large everywhere and the robust scale large with it. At
+    convergence (right column) the clean scene rejects almost nothing while
+    the occluded scene rejects the disc alone. The discrimination is therefore
+    a product of convergence rather than a precondition for it.}
+    \label{fig:wmaps}
 \end{figure}
 
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.48\textwidth]{figures/wmap_v3_occluded_600.png}
-    \caption{Variant~3 under occlusion, iteration~600. Compared with
-    Figure~\ref{fig:maps-occluded}(b), the rejection scattered across the
-    frame has resolved and only the occluder remains suppressed.}
-    \label{fig:wmap-converged}
-\end{figure}
+% ======================================================================
+%  ELSEWHERE, for consistency with the above:
+%
+%  1. Section 4.6.4 promises weight maps for Variants 2 and 3. Only
+%     Variant 3 produces them. Amend to Variant 3, or add saveMaps() to
+%     Variant 2. Variant 1 has D = I and its map is uniformly white, so it
+%     should not be promised at all.
+%
+%  2. Section 4.4.2 should carry ONE structure map, gmap_v3_nom_iter600.png,
+%     beside eq (4.9), paired with the intensity-based map gmap_v3_1.png as
+%     the ablation of the measure. See the note in ch4_checklist.md step 4.
+%
+%  3. Section 4.7.1's discussion of what the nominal case establishes can
+%     now cite the 0.3% figure above rather than resting on pose errors
+%     alone. This is the strongest empirical support for Remark 4.2.2 in the
+%     chapter and is worth a forward reference from 4.7.1 to here.
+% ======================================================================
