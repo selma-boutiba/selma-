@@ -1,0 +1,129 @@
+% ======================================================================
+%  Section 4.7.2 --- Convergence under occlusion.  New text.
+%  The section currently contains Figures 4.6-4.9 and Table 4.2 and no prose.
+%
+%  MEASURED VALUES (iteration 600, converted from the console):
+%
+%    variant     |dt|        |dw|       misalignment   |Vc| (iter 300)
+%    1 none      1291 um     1.6953 deg   25.8 px      1.77e-6
+%    2 Tukey     2.91 um     0.0164 deg    0.25 px     3.27e-5
+%    3 Hermite   3.12 um     0.0152 deg    0.23 px     7.59e-6
+%
+%    |e|^2 at iteration 300: 1.551e10, 1.573e10, 1.573e10
+%    %%% NEEDED: the same three values at iteration 600. The argument in the
+%    %%% third paragraph depends on Variant 1 still having the SMALLEST
+%    %%% feature error at 600, as it does at 300. Verify before keeping it.
+%
+%  WHAT THIS SECTION MUST NOT CLAIM. Variants 2 and 3 differ by 7.6% in
+%  rotation and 7.2% in translation, in opposite directions. They are
+%  indistinguishable here. Section 4.6.1 calls their comparison the decisive
+%  one of the chapter, so the tie has to be reported as a tie.
+%
+%  WHAT IT MUST NOT DO EITHER. Do not compare these numbers with Table 4.1's.
+%  The occluded runs reach micrometre accuracy and the nominal runs do not,
+%  which would suggest that occlusion improves positioning. The cause is the
+%  gain schedule: lambda is proportional to the intensity error, the occluder
+%  puts a permanent floor under it (14.8 grey levels RMS against 2.4 in the
+%  nominal case), so lambda stays near 2.2 instead of decaying to 0.04 and
+%  the controller keeps driving. Within the occluded case all three variants
+%  share lambda to within 6%, so the three-way comparison is clean.
+% ======================================================================
+
+\subsection{Convergence under occlusion}
+\label{sec:ablation-results}
+
+The target is now occluded by a disc covering $7.4\%$ of the measurements,
+present in the images acquired during servoing but absent from the reference
+image, so that the corrupted measurements are genuine outliers with respect to
+the model rather than a change of goal. Figure~\ref{fig:occ-setup} shows the
+configuration. Everything else is as in Section~\ref{sec:nominal}: same initial
+and desired poses, same bank, same gain schedule, same iteration cap.
+
+\paragraph{The unweighted scheme converges to the wrong pose.}
+Variant~1 terminates $1.29$~mm and $1.70^{\circ}$ from the desired pose, a
+misalignment of some $26$~pixels at $f=870$~px. This is not slow convergence:
+its commanded velocity has fallen to $1.8\times10^{-6}\,\mathrm{m\,s^{-1}}$,
+\emph{smaller} than that of either weighted variant, and
+Figure~\ref{fig:occ-v1}(b) shows the pose error flat over the last three
+hundred iterations. The scheme has converged, and it has converged somewhere
+else. The occluded block biases the descent direction exactly as
+Section~\ref{sec:least-squares} predicts of a quadratic cost, and the
+minimiser of the corrupted objective is a quarter of a degree and a millimetre
+away from the minimiser of the uncorrupted one.
+
+\paragraph{Both weighted variants recover the pose.}
+Variants~2 and~3 terminate $2.9$ and $3.1$~micrometres from the desired pose,
+with rotational errors of $0.016^{\circ}$ and $0.015^{\circ}$. Relative to the
+baseline this is an improvement of a factor of roughly $400$ in translation
+and $100$ in rotation, and it takes the residual misalignment from $26$~pixels
+to a quarter of a pixel. The weighting does what Section~\ref{sec:weighted-law}
+claims for it: the corrupted measurements contribute neither to the descent
+direction nor to the curvature estimate, and the pose is recovered from the
+remainder.
+
+\paragraph{The two weightings are indistinguishable at this occlusion level.}
+Variant~3 attains the smaller rotational error, $0.0152^{\circ}$ against
+$0.0164^{\circ}$, and the larger translational error, $3.12$ against
+$2.91\,\mu$m --- differences of $7.6\%$ and $7.2\%$ respectively, in opposite
+directions. On a single run per variant no ordering can be read from
+differences of that size. The comparison identified in
+Section~\ref{sec:ablation-variants} as the decisive one of the chapter
+therefore returns a tie: on this configuration the structural information does
+not measurably improve on generic robust estimation.
+
+What it does change is which measurements are rejected and when, and that is
+not visible in the pose error at all. Section~\ref{sec:weight-maps} examines
+it directly and finds that the two mechanisms differ substantially even where
+their outcomes do not.
+
+Two qualifications bound this result rather than weaken it. The occluder here
+is a single compact disc of uniform intensity, which is the case the structure
+measure of~\eqref{eq:structG} is best suited to and also the case a
+residual-only estimator finds easiest, since the corrupted residuals are large
+and mutually consistent. The configurations in which the two might be expected
+to separate --- a fragmented occluder, whose perimeter-to-area ratio
+Section~\ref{sec:mad} identifies as the relevant quantity, or an occluded
+fraction approaching the breakdown point --- are not tested here and are
+identified as future work in Section~\ref{sec:future}.
+
+\paragraph{The feature error is not a proxy for accuracy.}
+%%% VERIFY at iteration 600 before keeping this paragraph; the values quoted
+%%% are from iteration 300.
+The three variants terminate at feature errors of $1.551\times10^{10}$,
+$1.573\times10^{10}$ and $1.573\times10^{10}$. Variant~1 therefore attains the
+\emph{smallest} feature error of the three while positioning the camera a
+hundred times less accurately. This is the clearest demonstration in the
+chapter of a point made in passing in Section~\ref{sec:nominal}: the
+unweighted scheme minimises the corrupted objective more successfully than the
+weighted ones do, and the minimum of the corrupted objective is in the wrong
+place. Any assessment of these variants by their residual would rank them
+exactly backwards.
+
+\paragraph{A caution on comparing the two cases.}
+The weighted variants reach micrometre accuracy here and sub-millimetre
+accuracy in the nominal case of Section~\ref{sec:nominal}, which would seem to
+say that occlusion improves positioning. It does not. The cause is the gain
+schedule. By~\eqref{eq:lambda} the adaptive gain is proportional to the
+intensity error, and the occluder places a permanent floor under that error:
+it settles at $14.8$ grey levels root-mean-square against $2.4$ in the nominal
+case, because no pose can cancel a residual that arises from a difference in
+scene content. The gain accordingly remains near $\lambda=2.2$ instead of
+decaying to $\lambda=0.04$, and the controller continues to drive the camera
+long after it has stopped in the nominal case. Nothing about the occlusion
+assists the positioning; the scheme simply never stops pushing. Within the
+occluded case the three variants share $\lambda$ to within six per cent, so
+the comparison made above is unaffected; across the two cases the numbers are
+not comparable and should not be read as such.
+
+% ======================================================================
+%  LABELS ASSUMED --- rename to match your own:
+%    fig:occ-setup            Figure 4.6
+%    fig:occ-v1               Figure 4.7
+%    sec:least-squares        4.2.1
+%    sec:weighted-law         4.2.2
+%    sec:ablation-variants    4.6.1
+%    sec:weight-maps          4.7.3
+%    sec:nominal              4.7.1
+%    sec:mad                  4.3.2
+%    sec:future               future work
+% ======================================================================
