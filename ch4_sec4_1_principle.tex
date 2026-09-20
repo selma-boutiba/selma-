@@ -1,0 +1,123 @@
+% ======================================================================
+%  Section 4.4 and 4.4.1 --- Principle.  Corrected.
+%
+%  TWO CLAIMS THAT ARE NO LONGER TRUE, AND ONE THAT IS NOW PROVABLE AND
+%  MISSING.
+%
+%  A. "obtained from response maps that the scheme computes in any case,
+%     the only additional work being a pointwise energy evaluation and a
+%     mean over the image." False after 4.4.2. The feature vector uses the
+%     SUMMED kernels; the structure measure uses the FIRST-ORDER kernels,
+%     which the implementation evaluates in six additional convolutions per
+%     iteration. This is the last of the three places the claim appears.
+%
+%  B. "It is not a generic image-gradient or saliency measure." With
+%     first-order kernels it is precisely a Gauss-derivative gradient
+%     magnitude, which is the canonical generic image-gradient measure.
+%     4.4.2 already states the narrower claim that survives; 4.4.1 must
+%     agree with it.
+%
+%  C. MISSING, AND IT IS THE BEST ARGUMENT THE SECTION COULD MAKE.
+%     The sentence "where the response energy is high, the measurement
+%     constrains the camera pose strongly" is asserted as an intuition. It
+%     is in fact a theorem about the interaction matrix, and one that holds
+%     for the first-order measure and NOT for the summed one. Every
+%     component of the luminance interaction matrix row is a linear
+%     combination of I_x and I_y with coefficients depending only on the
+%     image position:
+%
+%       vvx = I_x/Z                     vwx = -xy I_x - (1+y^2) I_y
+%       vvy = I_y/Z                     vwy = (1+x^2) I_x + xy I_y
+%       vvz = -(x I_x + y I_y)/Z        vwz = y I_x - x I_y
+%
+%     so the norm of that row factorises as ||grad I|| times a purely
+%     geometric function of (x,y). G is a scale-aggregated ||grad I||.
+%     It therefore captures exactly the image-dependent factor of the row
+%     norm, the remaining factor being known in closed form. That is why the
+%     measure is the right one, and why the DC-carrying version was not: a
+%     local mean of I bears no relation to the row norm at all.
+%
+%     Adding this converts the section's central intuition into an
+%     identity, and retrospectively justifies the kernel choice of 4.4.2 on
+%     grounds other than "the maps look better".
+%
+%  D. The band-pass sentence is now TRUE of the implementation and should be
+%     kept. It was false while the summed kernels were in use.
+% ======================================================================
+
+\section{Hermite-Informed Weighting}
+\label{sec:hermite-weight}
+%%% The label belongs immediately after the \section command. In the source
+%%% supplied it sits before \subsection{Principle} with no \section line
+%%% above it, which would attach it to whatever precedes.
+
+\subsection{Principle}
+\label{sec:hermite-principle}
+
+Remark~\ref{rem:weight-information} observed that the weights entering the
+robust control law need not be functions of the residuals alone. The proposal
+of this chapter is to make them depend also on the local image structure, as
+measured in the Hermite representation on which the servoing already operates.
+
+The motivation is the locality property established in
+Section~\ref{sec:hermite-properties}. Each Hermite response depends on the
+image only within a neighbourhood of radius of the order of the analysis scale
+$\sigma$, so the response at a given position is a statement about the image
+structure in that neighbourhood and at that scale.
+
+%%% (C) The new paragraph. It replaces the first of the two "facts" with the
+%%% reason that fact is true.
+That the magnitude of the local response measures how strongly a measurement
+constrains the pose is not merely plausible; it follows from the form of the
+interaction matrix. Every component of the row of $\mathbf{L}_{R}$ associated
+with a given position is a linear combination of the two image derivatives
+$I_{x}$ and $I_{y}$ at that position, with coefficients that depend on the
+image coordinates and the depth but not on the image content. The norm of that
+row therefore factorises into the local gradient magnitude and a purely
+geometric term known in closed form. The structure measure defined in the
+following subsection is a scale-aggregated gradient magnitude, and so captures
+exactly the image-dependent factor of the row norm --- precisely the part that
+the residual alone cannot supply. Where it is large the measurement carries
+strong pose information; where it is small the corresponding rows of
+$\mathbf{L}_{R}$ are small, and the measurement constrains the motion weakly
+whatever its residual happens to be.
+
+%%% (A) The cost, stated honestly. Six convolutions is not "no additional
+%%% work", and a reader who opens the implementation will count them.
+The second consideration is cost. The measure is not free: the feature vector
+is built from the summed Hermite kernels, whereas the structure measure uses
+the first-order kernels of the same family, which the scheme must evaluate
+separately. Three scales and two orientations add six convolutions per
+iteration to the twenty-eight the feature and interaction maps already
+require, together with a pointwise magnitude and a mean over the image. The
+overhead is therefore of the order of a fifth of the filtering already
+performed, and no new representation, scale or parameter is introduced.
+
+%%% (B) The claim narrowed to what survives, matching the wording adopted in
+%%% 4.4.2. (D) The band-pass clause kept: it is now true of the code.
+The essential point is that this reliability assessment is performed \emph{in
+the same representation in which the control operates}. The operator itself is
+a classical one --- a Gaussian-derivative gradient magnitude --- and no claim
+is made for its novelty. What distinguishes it is that it is evaluated at the
+same analysis scales that define the features, and is drawn from the same
+Gauss--Hermite family, so that it inherits the band-pass character and the
+noise suppression established in Section~\ref{sec:hermite-properties}: the
+structure it reports is structure at the scales the controller uses, with the
+high-frequency sensor noise already attenuated by the Gaussian envelope of the
+filters.
+
+% ======================================================================
+%  WHERE THE THREE "ALREADY COMPUTED" CLAIMS NOW STAND
+%    4.1  introduction   -- corrected, states the six convolutions
+%    4.3.3               -- corrected, claims only that the representation
+%                           is already in use
+%    4.4.1  here         -- corrected, states the operation count
+%  If you keep only one of the three quantitative statements, keep this one;
+%  the other two can simply avoid the claim.
+%
+%  CONSISTENCY CHECK AFTER THIS EDIT
+%  4.4.2 says the measure is "obtained from kernels the scheme already
+%  evaluates". That phrase is from my own earlier draft and has the same
+%  defect. Replace it there with the wording used above, or delete the
+%  clause: the sentence stands without it.
+% ======================================================================
