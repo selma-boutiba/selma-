@@ -1,0 +1,181 @@
+% ======================================================================
+%  Section 4.2.2 --- The weighted control law.  Corrected.
+%
+%  THREE SUBSTANTIVE PROBLEMS, then four smaller ones.
+%
+%  A. Equation (4.4) does not match the implementation, and another section
+%     already refers to the missing piece. The code computes
+%         H = ( mu*diag(H_D) + H_D + muFloor*I )^{-1}
+%     with muFloor = max(1e-6 * mean(diag H_D), 1e-12). Section 4.3.1 ends
+%     with "what makes the safeguard recorded there necessary rather than
+%     precautionary" -- but no safeguard is recorded here. Section 4.7.1
+%     likewise attributes invertibility to "the fixed floor added to the
+%     damped Hessian". The term has to appear in (4.4).
+%
+%  B. The null-space argument is too strong as stated. "the damped matrix
+%     inherits the null space of H_D" does not follow in general: a
+%     rank-deficient positive semi-definite matrix can have every diagonal
+%     entry positive, [[1,1],[1,1]] being the standard example, and then
+%     mu*diag(H_D) is positive definite and the damping regularises
+%     perfectly well. The statement is true in exactly one case -- when a
+%     diagonal entry of H_D vanishes -- and that case is worth stating
+%     precisely, because for a positive semi-definite matrix a zero diagonal
+%     entry forces the whole row and column to vanish, which is exactly what
+%     the weighting does when it annihilates a direction. Corrected below.
+%
+%  C. The D-squared convention is flagged but its consequence is not drawn.
+%     Section 4.2.1 derives the weights of an IRLS problem min sum w_j e_j^2,
+%     whose normal equations carry W = diag(w). Equation (4.4) carries D^2 =
+%     W^2. So the scheme realises the IRLS problem with weights w_j^2, not
+%     w_j. This is the standard construction in visual servoing and is
+%     harmless, but it should be said rather than left for a reader in
+%     estimation theory to notice.
+% ======================================================================
+
+\subsection{The weighted control law}
+\label{sec:weighted-law}
+%%% Sections 4.7.2 and 4.7.3 refer back here; give the subsection a label.
+
+Let $\mathbf{D}=\mathrm{diag}(w_{1},\dots,w_{P})$ collect the weights, a
+symmetric positive semi-definite matrix by construction. Introducing
+$\mathbf{D}$ into the Levenberg--Marquardt control law~\eqref{eq:lm-law} of
+Chapter~\ref{ch:herpvs} gives the robust control law used throughout this
+chapter,
+%%% (A) The epsilon term is the safeguard the implementation applies and
+%%% that Sections 4.3.1 and 4.7.1 already refer to. Without it the equation
+%%% in the thesis is not the equation in the program.
+\begin{equation}
+    \mathbf{V}_{c}=-\lambda\,\Bigl(\mathbf{H}_{\mathbf{D}}
+    +\mu\,\mathrm{diag}\bigl(\mathbf{H}_{\mathbf{D}}\bigr)
+    +\varepsilon\,\mathbf{I}_{6}\Bigr)^{-1}
+    \mathbf{L}_{R}^{\top}\mathbf{D}^{2}\,\mathbf{e},
+    \qquad
+    \mathbf{H}_{\mathbf{D}}=\bigl(\mathbf{D}\mathbf{L}_{R}\bigr)^{\top}
+    \bigl(\mathbf{D}\mathbf{L}_{R}\bigr)
+    =\mathbf{L}_{R}^{\top}\mathbf{D}^{2}\mathbf{L}_{R},
+    \label{eq:robust-lm-law}
+\end{equation}
+in which $\mathbf{L}_{R}$ is the stacked four-scale Hermite interaction
+matrix~\eqref{eq:stacked-L}, the gain $\lambda$ and damping $\mu$ retain the
+adaptive form~\eqref{eq:lambda}--\eqref{eq:mu}, and
+\begin{equation}
+    \varepsilon=\max\!\left(10^{-6}\,\frac{\operatorname{tr}\mathbf{H}_{\mathbf{D}}}{6},
+    \;10^{-12}\right)
+    \label{eq:hessian-floor}
+\end{equation}
+is a fixed floor on the damped Hessian whose purpose is explained below. The
+weighting acts simultaneously on the error and on the interaction matrix,
+which is what distinguishes it from a simple masking of the error: a
+measurement judged unreliable contributes neither to the descent direction nor
+to the curvature estimate.
+
+\paragraph{Why the floor is necessary.}
+The inverse in~\eqref{eq:robust-lm-law} requires that the surviving weights
+leave $\mathbf{H}_{\mathbf{D}}$ of rank six. This is a stronger requirement
+than in the unweighted case, for a reason specific to the form of the damping.
+%%% (B) The precise statement. A rank-deficient PSD matrix need NOT have a
+%%% zero diagonal entry, so the damping does not in general fail; it fails in
+%%% exactly the case described here, which is also exactly the case robust
+%%% rejection produces.
+Suppose the weighting annihilates some direction of the feature space
+entirely, so that the $i$-th diagonal entry of $\mathbf{H}_{\mathbf{D}}$
+vanishes. Since $\mathbf{H}_{\mathbf{D}}$ is positive semi-definite, a zero
+diagonal entry forces the whole of its $i$-th row and column to vanish with
+it; the matrix $\mathrm{diag}(\mathbf{H}_{\mathbf{D}})$ then has a zero in the
+same place, so the damping term $\mu\,\mathrm{diag}(\mathbf{H}_{\mathbf{D}})$
+vanishes on that direction as well and the damped matrix is singular. Scaling
+the damping by $\mathrm{diag}(\mathbf{H}_{\mathbf{D}})$ rather than by the
+identity, which is what makes the scheme invariant to the scaling of the
+individual degrees of freedom, is precisely what deprives it of the ability to
+regularise in this case. A redescending estimator that rejects too large a
+fraction of the measurements can therefore render the control law undefined
+rather than merely ill-conditioned.
+
+The floor $\varepsilon$ of~\eqref{eq:hessian-floor} removes this failure mode
+at negligible cost. It is six orders of magnitude below the mean diagonal of
+$\mathbf{H}_{\mathbf{D}}$, so it does not perturb the step while the Hessian
+is well conditioned, and it bounds the inverse away from singularity when a
+direction is lost. The absolute floor of $10^{-12}$ covers the degenerate case
+in which $\mathbf{H}_{\mathbf{D}}$ vanishes altogether.
+%%% If you would rather keep the floor out of the main equation, the
+%%% alternative is to state it here as an implementation detail and cite it
+%%% from 4.3.1 and 4.7.1. I recommend against that: the numbers reported in
+%%% 4.7 come from a program that applies it at every iteration, and it is
+%%% the reason the rank condition is a theoretical rather than a practical
+%%% constraint.
+
+\paragraph{Two conventions.}
+The weights are evaluated from the residuals of the current servoing iteration
+and held fixed within the step, consistently with the iteratively reweighted
+scheme of Section~\ref{sec:least-squares}.
+%%% Was sec:robust-framework, which is the whole of 4.2; IRLS is described in
+%%% 4.2.1 specifically.
+And they enter~\eqref{eq:robust-lm-law} by scaling both the interaction matrix
+and the error before the normal equations are formed, so that $\mathbf{D}$
+appears squared in $\mathbf{H}_{\mathbf{D}}$ --- the same construction used
+in~\cite{key26}. The weight $w_{j}$ of~\eqref{eq:irls-weight} is applied
+directly, without a compensating square root, so that the normal equations
+carry $w_{j}^{2}$ and the scheme realises the reweighted problem
+$\min\sum_{j}w_{j}^{2}e_{j}^{2}$ rather than the
+$\min\sum_{j}w_{j}e_{j}^{2}$ of Section~\ref{sec:least-squares}.
+%%% (C) This is the sentence that was missing. The consequence is worth
+%%% stating and then dismissing, which the next sentence does.
+Since $w_{j}\in[0,1]$ and the map $w\mapsto w^{2}$ is monotone and fixes both
+endpoints, the sets of rejected and of fully retained measurements are
+identical under the two conventions and only the grading between them differs;
+the choice follows the visual servoing literature and is recorded here for
+reproducibility rather than because anything depends on it.
+
+Two properties of~\eqref{eq:robust-lm-law} are worth stating explicitly, as
+they structure the remainder of the chapter.
+
+\begin{remark}[The unweighted scheme is the special case $\mathbf{D}=\mathbf{I}$]
+\label{rem:baseline}
+Setting all weights to unity reduces $\mathbf{H}_{\mathbf{D}}$ to
+$\mathbf{L}_{R}^{\top}\mathbf{L}_{R}$ and~\eqref{eq:robust-lm-law} to the
+control law~\eqref{eq:lm-law} of Chapter~\ref{ch:herpvs}, exactly. The
+unweighted scheme is therefore not a different method introduced for
+comparison, but the degenerate case of the present formulation. This is what
+makes the first arm of the ablation of Section~\ref{sec:ablation-protocol} a
+genuine baseline: the three variants differ in the definition of $\mathbf{D}$
+and in nothing else.
+\end{remark}
+
+\begin{remark}[What the weights may depend upon]
+\label{rem:weight-information}
+The estimator~\eqref{eq:irls-weight} determines $w_{j}$ from the residual
+$e_{j}$ alone. Nothing in the weighted control law~\eqref{eq:robust-lm-law}
+requires this: any non-negative diagonal $\mathbf{D}$ preserving the rank
+condition above yields a valid weighted problem. The weights may therefore be
+made to depend on further information about the measurement, and in particular
+on the local image structure at the position where it is taken. Exploiting
+this freedom is the subject of Section~\ref{sec:hermite-weight}.
+\end{remark}
+
+% ======================================================================
+%  D. THE REMARK ENVIRONMENT IS NOT RENDERING
+%
+%  In the PDF these two remarks appear as running text with their titles in
+%  literal square brackets:
+%      [The unweighted scheme is the special case D = I] Setting all ...
+%      [What the weights may depend upon] The estimator ...
+%  so the optional argument is being typeset rather than used as a heading.
+%  That is also why \ref{rem:baseline} prints as "Remark ??" on p. 75 while
+%  resolving on p. 66. Declare the environment properly in the preamble:
+%
+%      \usepackage{amsthm}
+%      \theoremstyle{remark}
+%      \newtheorem{remark}{Remark}[section]
+%
+%  and rebuild twice so the .aux settles. Both remarks are cited by number
+%  from 4.4.1, 4.6.1 and 4.7.1, so this is not cosmetic.
+%
+%  E. SMALLER POINTS
+%  - "regularizing" is -ize; the chapter body is -ise elsewhere.
+%  - \eqref{eq:lm-law} and \eqref{eq:stacked-L} are Chapter 3 labels;
+%    confirm they still resolve, since 4.4.2 currently prints Section ?? for
+%    its Chapter 3 cross-references.
+%  - The epsilon of (4.5) collides with no existing symbol in the chapter,
+%    but check Chapter 3, where epsilon is sometimes a convergence
+%    threshold. If it is taken, use \varepsilon_{H} or \delta.
+% ======================================================================
