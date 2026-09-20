@@ -1,0 +1,143 @@
+% ======================================================================
+%  Section 4.3 and 4.3.1 --- Residual-based Tukey weighting.  Corrected.
+%
+%  The mathematics here is right. I checked rho, psi and w:
+%      rho' = (c^2/6) * (-3)(1-u^2/c^2)^2 * (-2u/c^2) = u(1-u^2/c^2)^2
+%      w = psi/u = (1-u^2/c^2)^2
+%  and the claim that an overall factor cancels in psi(u)/u is correct.
+%
+%  YOUR %%% VERIFY IS ANSWERED: c = 4.6851 is confirmed against the
+%  implementation. ViSP's vpRobust computes the rejection threshold as
+%      double C = sigma * 4.6851;
+%  so the constant in the thesis and the constant in the program agree, and
+%  it is the same in Variants 2 and 3 as Section 4.6.2 requires. The marker
+%  can be deleted.
+%
+%  FOUR CHANGES, one of which is substantive.
+%
+%  1. SUBSTANTIVE. The justification given for c = 4.6851 is 95 per cent
+%     efficiency "when the residuals are Gaussian". The chapter elsewhere
+%     says, twice, that they are not: 4.3.3 notes that gross misalignment
+%     produces residuals that "do not follow the distribution the
+%     M-estimator presumes", and 4.7.3 now measures the consequence, 13.6
+%     per cent of valid measurements strongly down-weighted on a clean
+%     scene at iteration 1. Quoting a Gaussian-model justification without
+%     noting that the model does not hold here invites exactly the question
+%     4.7.3 answers. One clause fixes it.
+%  2. The forward reference for the rank failure pointed at the whole of
+%     Section 4.2. It belongs to 4.2.2, where the mechanism and the
+%     safeguard are now stated precisely.
+%  3. "baseline" is used here for Variant 2 and in Remark 4.2.1 for
+%     Variant 1. Two different things under one word.
+%  4. u is called "the normalized residual" without being defined; and
+%     -ize again.
+% ======================================================================
+
+\section{Residual-Based Tukey Weighting}
+\label{sec:tukey}
+
+%%% (3) Variant 1 is called "a genuine baseline" in Remark 4.2.1. Calling
+%%% Variant 2 "the generic robust baseline" here gives the reader two
+%%% baselines. "Reference" keeps them apart.
+The first of the two weightings compared is the standard, purely
+residual-based M-estimator, which serves in the ablation as the generic robust
+reference against which the structure-aware proposal is measured.
+
+\subsection{The Tukey biweight}
+\label{sec:tukey-biweight}
+
+Among the classical M-estimators, the Tukey biweight is adopted here because
+it is \emph{redescending}: its influence function returns to zero for
+sufficiently large residuals, so that measurements beyond a rejection
+threshold are excluded from the estimate entirely rather than merely
+down-weighted~\cite{key51}. This is the appropriate behaviour for occlusion,
+where the corrupted measurements are not merely noisy but carry no information
+about the pose at all. The associated loss function is
+\begin{equation}
+    \rho^{\mathrm{T}}(u)=
+    \begin{cases}
+        \dfrac{c^{2}}{6}\left[1-\left(1-\dfrac{u^{2}}{c^{2}}\right)^{3}\right],
+            & \lvert u\rvert\le c,\\[10pt]
+        \dfrac{c^{2}}{6}, & \lvert u\rvert>c,
+    \end{cases}
+    \label{eq:tukey-rho}
+\end{equation}
+where the saturation value $c^{2}/6$ follows from continuity at
+$\lvert u\rvert=c$. Differentiating gives the influence function
+$\psi^{\mathrm{T}}(u)=\rho^{\mathrm{T}\prime}(u)=u\bigl(1-u^{2}/c^{2}\bigr)^{2}$
+on $\lvert u\rvert\le c$, the scale factors cancelling exactly. Conventions
+differing by an overall non-zero multiplicative factor in $\rho^{\mathrm{T}}$
+and $\psi^{\mathrm{T}}$ appear in the literature. They are immaterial for the
+present IRLS formulation, since this factor cancels in the ratio $\psi(u)/u$
+defining the weight~\eqref{eq:irls-weight}. Substituting into that expression
+gives the Tukey weight function used throughout this chapter, understood as
+the weight derived from the biweight loss~\eqref{eq:tukey-rho} rather than as
+the loss or influence function themselves,
+\begin{equation}
+    w^{\mathrm{T}}(u)=
+    \begin{cases}
+        \left(1-\dfrac{u^{2}}{c^{2}}\right)^{2}, & \lvert u\rvert\le c,\\[10pt]
+        0, & \lvert u\rvert>c,
+    \end{cases}
+    \label{eq:tukey}
+\end{equation}
+%%% (4) u is now defined where it is first used as a symbol in its own right.
+where $u=e_{j}/\hat{s}$ is the residual normalised by the robust scale
+estimate of Section~\ref{sec:mad}, and $c$ is the tuning constant governing
+the rejection point.
+
+%%% (1) The efficiency argument is kept, because c = 4.6851 is indeed the
+%%% standard choice and was adopted for that reason. What is added is the
+%%% acknowledgement that the model under which the figure is derived does
+%%% not hold here, and a pointer to where the actual behaviour is measured.
+%%% Without this the chapter asserts a Gaussian justification in 4.3.1 and
+%%% denies the Gaussian assumption in 4.3.3 and 4.7.3.
+The constant is set to $c=4.6851$, the standard choice for the biweight,
+which yields approximately $95\%$ asymptotic efficiency relative to least
+squares at the Gaussian model while retaining resistance to
+contamination~\cite{key50}. It should be said that this justification is
+asymptotic and rests on an assumption that does not hold in the present
+setting: as Section~\ref{sec:structure-blind} argues and
+Section~\ref{sec:weight-maps} measures, the photometric residuals of a
+direct scheme under gross misalignment are neither independent nor Gaussian,
+and a redescending estimator tuned at the Gaussian model rejects a substantial
+fraction of uncorrupted measurements early in the servo. The value is
+therefore adopted as the conventional one, held identical across Variants~2
+and~3 so that the two differ in the argument supplied to the weight function
+and not in the function itself, rather than because the model from which it
+derives is satisfied here.
+
+Note that the weight is exactly zero for $\lvert u\rvert>c$, not merely small.
+%%% (2) was sec:robust-framework, the whole of 4.2. The mechanism and the
+%%% safeguard both live in 4.2.2.
+This hard rejection is precisely the mechanism identified in
+Section~\ref{sec:weighted-law} as capable of reducing the rank of
+$\mathbf{H}_{\mathbf{D}}$ and rendering the control law undefined, and it is
+what makes the floor~\eqref{eq:hessian-floor} recorded there necessary rather
+than precautionary.
+
+% ======================================================================
+%  LABELS THIS SECTION NOW NEEDS OR USES
+%    sec:tukey-biweight   4.3.1, added above
+%    sec:mad              4.3.2, referenced above -- add \label to it
+%    sec:structure-blind  4.3.3, referenced above -- add \label to it
+%    sec:weighted-law     4.2.2, added in the previous correction
+%    sec:weight-maps      4.7.3
+%    eq:hessian-floor     the floor added to (4.4) in the previous correction
+%
+%  EQUATION NUMBERING. Adding the floor as its own numbered equation in
+%  4.2.2 shifts everything after it by one: what the current PDF prints as
+%  (4.5) and (4.6) here become (4.6) and (4.7). LaTeX renumbers
+%  automatically; the point is only that the numbers in the PDF you are
+%  reading will no longer match after the rebuild.
+%
+%  NOT CHANGED
+%  - The derivation is correct as it stands and I verified it term by term.
+%  - The sentence about multiplicative conventions cancelling in psi(u)/u is
+%    right and is worth keeping; it forestalls a reader who knows a
+%    different normalisation of the biweight.
+%  - cite key50 is used both for IRLS in 4.2.1 and for the efficiency figure
+%    here. If key50 is a robust-statistics text that is fine; if it is a
+%    paper specifically about IRLS, the efficiency claim needs its own
+%    source. I cannot check the bibliography from the PDF.
+% ======================================================================
