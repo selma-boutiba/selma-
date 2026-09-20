@@ -1,0 +1,139 @@
+% ======================================================================
+%  Section 4.3.2 --- Robust normalization of the residuals.  Corrected.
+%
+%  VERIFIED AGAINST THE IMPLEMENTATION. ViSP computes
+%      m_mad = 1.4826 * normmedian;
+%  and enforces m_mad_min = 0.0017. Both numbers in the text are right.
+%
+%  ONE BROKEN PROMISE, ONE CLAIM NOW MEASURABLE, THREE SMALL THINGS.
+%
+%  A. "The admissible occlusion fraction ... is characterized empirically in
+%     Section 4.7.2." It is not. Section 4.7.2 tests a single occluder at a
+%     single size. There is no sweep, and the draft of 4.7.2 explicitly
+%     lists an occluded fraction approaching the breakdown point as future
+%     work. The promise has to go or be redirected.
+%
+%  B. The dilation argument, by contrast, CAN now be supported, because it
+%     is visible in the iteration-600 weight map. Measured on that map:
+%
+%       occluder, the connected region where G vanishes   3829   5.80%
+%       largest connected rejected region (w < 0.25)      5886   8.92%
+%       ratio                                             1.54
+%       equivalent radii                          34.9 px -> 43.3 px
+%       i.e. a rejected ring of about 8 px around the disc
+%       against a nominal filter half-width of 4 px (9x9 kernels)
+%
+%     So the prediction holds and is quantified. The section should predict
+%     and point forward; 4.7.3 should report the number.
+%
+%  C. NOTE FOR 4.7.2 AND 4.7.3. The occluder covers 7.4% of the
+%     measurements at ITERATION 1 and 5.80% at ITERATION 600, because the
+%     camera starts at Z = 1.10 m and finishes at Z = 1.30 m, so the disc
+%     subtends a smaller angle at the end. The ratio of areas predicted by
+%     the depths alone is (1.30/1.10)^2 = 1.40 against 7.4/5.8 = 1.28
+%     measured, the difference being the threshold on G. Both figures are
+%     correct at their own iteration, but 4.7.3 currently compares the 9.5%
+%     rejected at iteration 600 against the 7.4% measured at iteration 1.
+%     That comparison must use 5.80%, which makes the point more strongly,
+%     not less: 9.5% against 5.80% is a clear excess, where 9.5% against
+%     7.4% looked like the occluder plus noise.
+% ======================================================================
+
+\subsection{Robust normalisation of the residuals}
+\label{sec:mad}
+%%% Sections 4.3.1, 4.7.2 and 4.7.3 all refer here; the label is needed.
+
+The normalisation $u_{j}=e_{j}/\hat{s}$ requires a scale estimate $\hat{s}$
+that is itself insensitive to the outliers it is meant to detect; the sample
+standard deviation is unsuitable, since the occluded measurements inflate it
+and thereby mask their own detection. The median absolute deviation is used
+instead,
+\begin{equation}
+    \mathrm{MAD}=\operatorname{med}_{j}\bigl\lvert e_{j}-\operatorname{med}_{k}(e_{k})\bigr\rvert,
+    \qquad
+    \hat{s}=1.4826\,\mathrm{MAD},
+    \label{eq:mad}
+\end{equation}
+the constant $1.4826$ making $\hat{s}$ a consistent estimator of the standard
+deviation for normally distributed residuals, with the same proviso as
+attaches to the tuning constant of Section~\ref{sec:tukey-biweight}: the
+normalisation is adopted as the conventional one, not because the residuals
+of a direct scheme satisfy the model from which it is derived.
+
+\paragraph{Breakdown point and occluded area.}
+The MAD has a breakdown point of $50\%$, so the scale estimate remains
+meaningful provided that fewer than half of the residual entries are
+contaminated. This does not translate into an equal bound on the occluded
+image area. Because each Hermite response draws on a neighbourhood determined
+by the effective filter support, and because the four scales are stacked, an
+occluded region can affect responses extending beyond the directly occluded
+pixels: the set of \emph{potentially affected} responses is approximately the
+occluded region dilated by that support. The ratio of affected responses to
+occluded pixels therefore grows with the perimeter-to-area ratio of the
+occlusion, and is larger for a small or fragmented mask than for a single
+compact one. The admissible occlusion fraction is consequently smaller than
+the nominal breakdown point.
+
+%%% (B) The prediction is now testable and tested. Note the careful
+%%% distinction: dilation is a statement about which responses are AFFECTED,
+%%% and only at convergence does the set of REJECTED responses come to
+%%% resemble it. At iteration 1 the rejected set is smaller than the
+%%% occluder, as 4.7.3 reports, because the robust scale is still large.
+This dilation is directly observable in the weight maps of
+Section~\ref{sec:weight-maps}. At convergence the rejected region forms a
+ring around the occluding disc some two filter half-widths wide, and exceeds
+the occluded region itself by a factor of about $1.5$ --- the measurement is
+reported there. It should be noted that the two sets coincide only at
+convergence: while the pose error is still large the robust scale is large in
+proportion and the rejected set is \emph{smaller} than the occluded one, so
+the dilation bounds what the occlusion can affect rather than what the
+estimator rejects at any given instant.
+
+%%% (A) The promise of an empirical characterisation is replaced by an
+%%% honest statement of what was and was not done. A single occluded
+%%% fraction was tested; the bound itself was not located.
+The experiments of Section~\ref{sec:ablation-results} use a single compact
+occluder covering a fraction well below this bound, and therefore do not
+locate it. Determining the admissible fraction, and in particular the
+dependence on mask fragmentation that the argument above predicts, would
+require a sweep over occluder size and shape and is identified as future work
+in Section~\ref{sec:future}.
+
+\paragraph{Implementation.}
+The median absolute deviation in~\eqref{eq:mad} is lower-bounded by the
+minimum value $0.0017$ enforced by the robust estimator, which prevents
+instability when the residual dispersion approaches zero. In the runs reported
+in Section~\ref{sec:results} the dispersion remains several orders of
+magnitude above this bound throughout, so the floor is never active; it
+guards against a degenerate case rather than shaping the behaviour observed.
+
+The resulting weights are
+\begin{equation}
+    w^{\mathrm{T}}_{j}=w^{\mathrm{T}}\!\left(\frac{e_{j}}{\hat{s}}\right),
+    \qquad j=1,\dots,P,
+    \label{eq:tukey-weights}
+\end{equation}
+recomputed at every servoing iteration from the current residuals, and
+assembled into
+$\mathbf{D}^{\mathrm{T}}=\mathrm{diag}(w^{\mathrm{T}}_{1},\dots,w^{\mathrm{T}}_{P})$.
+
+% ======================================================================
+%  D. A NOTATION CLASH WORTH FIXING BEFORE IT SPREADS
+%
+%  D^T here means "the D of the Tukey variant", while \top is transpose
+%  throughout 4.2.2 -- and (4.4) contains L_R^\top D^2 L_R, so the reader
+%  meets both within a few lines. Section 4.4.3 then adds D^H. Consider
+%
+%      D_T and D_H   (subscripts, no collision with transpose)
+%  or  D^{(2)} and D^{(3)}   (by variant number, which also ties the
+%                             notation to the ablation of 4.6.1)
+%
+%  Mathematically harmless, since D is symmetric, but the reader has to
+%  decide each time which superscript is which.
+%
+%  E. SMALLER
+%  - "normalization" / "characterized" are -ize; the chapter is -ise
+%    elsewhere. The heading is corrected above; check the rest.
+%  - Section 4.7.2 and Table 4.2's caption both state the occluder as 7.4%
+%    of the measurements without saying at which pose. See note C above.
+% ======================================================================
