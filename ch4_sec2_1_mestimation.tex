@@ -1,0 +1,115 @@
+% ======================================================================
+%  Section 4.2.1 --- From least squares to M-estimation.  Corrected.
+%
+%  FIVE CHANGES. The first is the only one a reader would call an error;
+%  the rest are precision, punctuation and a strengthening.
+%
+%  1. The objective is minimised over V_c in both (4.1) and (4.2). A sum of
+%     squared residuals is not a function of a velocity. The cost is a
+%     function of the camera POSE; V_c is the descent step the control law
+%     produces from it. Corrected below.
+%     %%% If Chapters 1 and 3 use the same min_{V_c} notation, they need the
+%     %%% same correction, or this section will contradict them.
+%  2. "when the weights are held fixed" -- the scale s-hat must be held
+%     fixed too, since it is itself a function of the residuals. Without
+%     that the stationarity condition and the weighted normal equations do
+%     not coincide.
+%  3. Equation (4.3) ends in a comma and the following sentence begins with
+%     a capital. It should be a full stop.
+%  4. The displaced minimiser is now a measured fact, not an assertion:
+%     Section 4.7.2 shows Variant 1 converging 26 pixels away while holding
+%     the SMALLEST feature error of the three. A forward reference costs one
+%     clause and turns the paragraph from motivation into evidence.
+%  5. minimize / minimizer are -ize; the chapter body is -ise elsewhere.
+% ======================================================================
+
+\section{Robust Estimation in Direct Visual Servoing}
+\label{sec:robust-framework}
+
+\subsection{From least squares to M-estimation}
+\label{sec:least-squares}
+%%% Section 4.7.2 refers back to this subsection; give it a label.
+
+%%% (1) The minimisation is over the pose. The control law realises a step
+%%% on the resulting cost; it is not the variable being optimised.
+The control laws of Chapters~\ref{chap:Fundamentals-of-Visual-Servoing}
+and~\ref{ch:herpvs} minimise a sum of squared residuals. Writing the Hermite
+feature error of Chapter~\ref{ch:herpvs} as
+$\mathbf{e}(\mathbf{r})=\mathbf{R}(\mathbf{r})-\mathbf{R}^{*}\in\mathbb{R}^{P}$,
+where $\mathbf{r}$ denotes the camera pose and $P$ the dimension of the stacked
+feature vector, the underlying objective is
+\begin{equation}
+    \min_{\mathbf{r}}\;\sum_{j=1}^{P} e_{j}^{2}(\mathbf{r}).
+    \label{eq:ls-objective}
+\end{equation}
+The commanded velocity $\mathbf{V}_{c}$ is the descent step that the control
+law produces on this objective, not a variable of it.
+
+The quadratic cost weights every measurement by the square of its residual, so
+its sensitivity to a measurement grows without bound as that measurement
+departs from the model. A block of grossly corrupted measurements, such as
+those produced by an occlusion, therefore dominates the objective, and the
+minimiser is displaced away from the value that the valid measurements alone
+would indicate. That displacement is measured directly in
+Section~\ref{sec:ablation-results}, where the unweighted scheme attains the
+smallest residual of the three variants while positioning the camera two
+orders of magnitude less accurately.
+%%% (4) Added. The last sentence is the whole justification for the chapter
+%%% and it is now supported by a number rather than left as an expectation.
+
+M-estimation replaces the quadratic by a function $\rho$ that grows more
+slowly for large residuals~\cite{key49},
+\begin{equation}
+    \min_{\mathbf{r}}\;\sum_{j=1}^{P}\rho\!\left(\frac{e_{j}}{\hat{s}}\right),
+    \label{eq:m-objective}
+\end{equation}
+where $\hat{s}$ is a robust estimate of the scale of the residuals, specified
+in Section~\ref{sec:tukey}, and required so that $\rho$ is applied to a
+dimensionless quantity and the estimator is invariant to the overall magnitude
+of the error. Differentiating~\eqref{eq:m-objective} and writing $\psi=\rho'$
+for the influence function, the stationarity condition coincides, \emph{when
+the weights and the scale are held fixed}, with the normal equations of the
+weighted least-squares problem $\min\sum_{j}w_{j}e_{j}^{2}$ with weights
+%%% (2) "and the scale" added. s-hat depends on the residuals through the
+%%% median absolute deviation (4.7), so freezing the weights alone does not
+%%% make the two conditions agree.
+\begin{equation}
+    w_{j}=\frac{\psi(e_{j}/\hat{s})}{e_{j}/\hat{s}}.
+    \label{eq:irls-weight}
+\end{equation}
+%%% (3) full stop, was a comma.
+
+The weights, however, are themselves functions of the residuals, which depend
+in turn on the solution; this circularity is what necessitates an iterative
+treatment, and is the basis of iteratively reweighted least
+squares~\cite{key50}, in which the weights are computed from the current
+residuals and the resulting weighted linear problem is solved, the two steps
+alternating. In a visual servoing loop this inner iteration is not performed
+to convergence at each control step; instead the weights are recomputed once
+per servoing iteration, so that the reweighting and the servoing proceed
+together~\cite{key26}.
+
+It is worth noting at the outset that the weight~\eqref{eq:irls-weight}
+depends on the magnitude of the residual alone. The estimator therefore
+carries no information about \emph{where} in the image a large residual
+arises, nor about what the image contains there. This is the opening exploited
+in Section~\ref{sec:hermite-weight}.
+
+% ======================================================================
+%  NOT CHANGED, AND WHY
+%
+%  - "grows more slowly for large residuals" is right as a general statement
+%    about M-estimators even though Tukey's rho is constant beyond c; the
+%    specific behaviour arrives in 4.3.1 and does not need pre-empting here.
+%  - The IRLS paragraph is accurate as it stands, including the point that
+%    the inner iteration is not run to convergence, which is the correct
+%    description of what the implementation does.
+%  - \ref{chap:Fundamentals-of-Visual-Servoing} uses a different label
+%    convention from ch:herpvs. Invisible in the output; left alone.
+%
+%  OPTIONAL
+%  P is introduced here and used throughout the chapter without a value.
+%  Stating it once, in 4.6.2 with the rest of the configuration, would help:
+%  P = 264000, being four Hermite scale responses over the 220 x 300
+%  interior region left by the ten-pixel filter border.
+% ======================================================================
