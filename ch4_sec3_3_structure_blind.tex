@@ -1,0 +1,109 @@
+% ======================================================================
+%  Section 4.3.3 --- Limitation: the estimator is structure-blind.
+%  Corrected.
+%
+%  The argument is sound and the permutation-invariance point is the best
+%  single sentence in the section. Four changes.
+%
+%  A. "the multi-scale Hermite responses ALREADY COMPUTED by the scheme
+%     provide direct access to it" -- the same claim corrected in the
+%     introduction and flagged for 4.4.1. After the move to first-order
+%     kernels in 4.4.2 the structure measure is NOT among the responses the
+%     feature vector uses; the implementation evaluates six additional
+%     separable convolutions per iteration. This is the third place the
+%     claim appears and all three must agree.
+%
+%  B. The central prediction of the second paragraph is now measured.
+%     Section 4.7.3 reports that at iteration 1, on a CLEAN scene where
+%     nothing is corrupted, 13.6% of measurements carry a weight below a
+%     quarter -- every one of them valid. That is this paragraph's
+%     prediction, quantified. It should say so.
+%
+%  C. The closing sentence promises that the structural information
+%     "resolves the ambiguity". The results do not establish that. Table 4.3
+%     reports 13.6% early over-rejection for VARIANT 3, with the structure
+%     gate active, so the limitation identified here survives the proposed
+%     remedy in the only configuration measured. Promise the attempt, not
+%     the outcome.
+%
+%  D. LABEL. My correction to 4.3.1 refers to this subsection as
+%     \ref{sec:structure-blind}. Your label is sec:tukey-limitation. Keep
+%     yours -- it is the one already in the document -- and change the
+%     reference in 4.3.1 to match. Do not add a second label.
+% ======================================================================
+
+\subsection{Limitation: the estimator is structure-blind}
+\label{sec:tukey-limitation}
+
+The weighting~\eqref{eq:tukey-weights} judges each measurement exclusively by
+the magnitude of its own residual. It has no access to the spatial arrangement
+of the measurements, and would assign identical weights to a residual vector
+and to any permutation of it, even though the measurements corrupted by an
+occlusion form a spatially coherent block rather than an arbitrary scattered
+subset. Nor does it have access to the local image structure at the position
+of each measurement, and therefore cannot distinguish a large residual arising
+where the image is photometrically sensitive to camera motion, and which is
+correspondingly informative about the pose error, from an equally large
+residual arising where the local structure contributes little to the
+interaction matrix.
+
+The consequence is a systematic difficulty at the beginning of the servo. When
+the initial pose error is large, valid measurements in photometrically
+sensitive regions produce legitimately large residuals, which a redescending
+estimator may reject; conversely, measurements whose residual happens to be
+moderate are retained irrespective of how much they constrain the motion.
+%%% (B) The prediction, measured. This is the strongest support the section
+%%% can have and it costs two sentences. Note that it is measured on a CLEAN
+%%% scene, which is what makes it unambiguous: nothing is corrupted, so
+%%% every rejection is an error.
+The effect is not hypothetical. Section~\ref{sec:weight-maps} measures it
+directly on an unoccluded target, where by construction no measurement is
+corrupted and every rejection is therefore mistaken: at the first iteration
+$13.6\%$ of measurements carry a weight below a quarter and $3.5\%$ are
+rejected outright. The estimator discards roughly one measurement in seven
+purely because the pose error is still large, and recovers them only as the
+residual distribution contracts.
+
+The information required to resolve this ambiguity is absent from the
+residuals but present in the local image structure, which the Hermite
+representation the scheme already operates in makes available at the analysis
+scales the controller uses. The following section uses it to define a
+structure-aware confidence measure; whether doing so mitigates the difficulty
+described here is an empirical question, answered in
+Section~\ref{sec:weight-maps}.
+%%% (A) "already computed by the scheme" removed: the measure is obtained
+%%% from the first-order kernels of the same family at the same scales, at
+%%% the cost of six additional convolutions per iteration. The wording above
+%%% claims only that the REPRESENTATION is already in use, which is true.
+%%%
+%%% (C) "resolve this ambiguity" softened to "mitigates ... is an empirical
+%%% question". Table 4.3's 13.6% is Variant 3's own weight map, so the
+%%% limitation identified here is still present when the proposed remedy is
+%%% active. Claiming resolution here would be contradicted three sections
+%%% later by the chapter's own table.
+
+% ======================================================================
+%  E. THE MEASUREMENT THAT WOULD SETTLE THIS -- worth an hour
+%
+%  Table 4.3 shows 13.6% early over-rejection for Variant 3. What it cannot
+%  show is whether that is better or worse than Tukey alone, because no
+%  weight map was produced for Variant 2. Without it the chapter cannot say
+%  whether the structure gate mitigates the difficulty of this section at
+%  all -- and that is the chapter's central mechanism claim, which the pose
+%  errors of 4.7.2 left as a tie.
+%
+%  The measurement is cheap: add saveMaps() to Variant 2 and run nominal
+%  once. Two numbers decide it, the fraction below a quarter weight at
+%  iteration 1 for each variant:
+%
+%     V3 (measured):  13.6%
+%     V2 (unknown):      ?%
+%
+%  If V2 is substantially higher, the structure gate demonstrably reduces
+%  the over-rejection this section predicts, and that is a result the
+%  chapter currently lacks. If the two are the same, say so -- it is the
+%  honest counterpart of the tie in 4.7.2 and it tells the reader where the
+%  mechanism does and does not act.
+%
+%  This is the single highest-value run still outstanding in the chapter.
+% ======================================================================
