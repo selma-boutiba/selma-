@@ -1,0 +1,126 @@
+% ======================================================================
+%  Section 4.1 --- Introduction.  Corrected.
+%
+%  SIX CHANGES, in order of importance. Each is explained at the point it
+%  occurs in the text below, in a %%% comment.
+%
+%  1. The opening sentence claimed Chapter 3 shows convergence "accurately"
+%     under partial occlusion. Section 4.7.2 shows that same scheme
+%     converging 26 pixels from the desired pose. The chapter's own results
+%     contradict its first sentence.
+%  2. "The Hermite bank ALREADY COMPUTED by the scheme carries exactly that
+%     missing information" is no longer true. After the correction to 4.4.2
+%     the measure is built from the first-order kernels D_{1,0}, D_{0,1},
+%     which are NOT among the summed kernels the feature vector uses; the
+%     implementation adds six separable convolutions per iteration.
+%  3. "A three-way ablation ANSWERS IT DIRECTLY" promises a verdict that
+%     4.7.2 does not deliver: Variants 2 and 3 differ by under eight per
+%     cent, in opposite directions.
+%  4. \label{sec:ch5-intro} in a Chapter 4 file.
+%  5. The section list switches from semicolons to commas half way through,
+%     and points at sec:ablation-results for "the results" when the results
+%     occupy the whole of 4.7.
+%  6. Spelling: organized/characterizes are -ize, while the chapter body
+%     uses -ise elsewhere. Pick one for the whole thesis.
+% ======================================================================
+
+\section{Introduction}
+\label{sec:ch4-intro}
+%%% (4) was sec:ch5-intro. Any \ref to the old label elsewhere must follow.
+
+%%% (1) "converges accurately under partial occlusion" is too strong, and
+%%% Section 4.7.2 disproves it: the same scheme, Variant 1, terminates
+%%% 1.29 mm and 1.70 degrees from the desired pose, a misalignment of 26
+%%% pixels, with its commanded velocity already vanished. What Chapter 3
+%%% established is that the scheme remains stable and converges; what it did
+%%% not establish is that it converges to the right pose. Saying so here is
+%%% what motivates the chapter, rather than undercutting it.
+Chapter~\ref{ch:herpvs} showed that HER-PVS retains its convergence under
+partial occlusion, and Section~\ref{sec:hermite-properties} established the
+structural reason: the Hermite filters have compact support, so an occlusion
+corrupts only those responses whose support overlaps the occluded region.
+
+That tolerance is nevertheless \emph{passive}. The corrupted responses are
+diluted within a dense feature vector but never identified, and they continue
+to enter the product $\mathbf{L}_{R}^{\top}\mathbf{e}$ that determines the
+commanded velocity. Because the occluded region is a coherent block of large,
+correlated residuals rather than a random perturbation, it biases the descent
+direction; and because dilution is an argument about proportions, its
+protection degrades as the occluded fraction grows. Passive tolerance
+therefore offers no graceful degradation, and, as
+Section~\ref{sec:ablation-results} shows, it does not prevent the scheme from
+converging to a systematically displaced pose.
+%%% (1, continued) This forward reference replaces the accuracy claim that
+%%% was removed from the first sentence. The bias is no longer asserted in
+%%% the abstract; it is measured in 4.7.2, and the introduction says where.
+
+This chapter makes the treatment of occlusion \emph{active}, attenuating the
+influence of corrupted measurements through a weighting matrix acting on both
+the error and the interaction matrix, within the framework of robust
+M-estimation~\cite{key26}. The contribution lies not in the use of an
+M-estimator as such, but in the information from which the weights are
+derived. A standard M-estimator is \emph{structure-blind}: it assesses each
+measurement by the magnitude of its own residual alone, and knows nothing of
+what the image contains at that position. The Hermite representation on which
+the scheme already operates supplies exactly that missing information, since
+its local response characterises the image structure at the very scales on
+which the control acts. The measure used here is drawn from that
+representation --- the first-order kernels of the same Gauss--Hermite family,
+evaluated at the same three analysis scales as the features themselves --- at
+the cost of six additional separable convolutions per iteration. The resulting
+weighting is accordingly termed \emph{Hermite-informed}.
+%%% (2) The previous wording said the bank "already computed by the scheme"
+%%% carries the information, implying the measure is free. It is not. The
+%%% feature vector uses the SUMMED kernels; the structure measure of (4.10)
+%%% uses the first-order kernels, which the implementation evaluates
+%%% separately. The claim that survives is the one made above: same family,
+%%% same scales, six extra convolutions. The same correction is needed in
+%%% 4.4.1, p. 67, which says "the only additional work being a pointwise
+%%% energy evaluation and a mean over the image".
+
+%%% (3) "answers it directly" was a promise the results do not keep: under
+%%% occlusion Variants 2 and 3 differ by 7.6 per cent in rotation and 7.2
+%%% per cent in translation, in opposite directions. The ablation is still
+%%% the right instrument and is still worth describing here; what it must
+%%% not do in the introduction is announce a verdict.
+Whether this structural information is worth its complexity is an empirical
+question, and the chapter is built around an experiment designed to isolate
+it. A three-way ablation compares servoing with no weighting, with a purely
+residual-based Tukey weighting, and with the proposed Hermite-informed
+weighting, all else held fixed. The first variant is the scheme of
+Chapter~\ref{ch:herpvs} exactly, so that the comparison of the first with the
+second measures what robust estimation contributes, and the comparison of the
+second with the third measures what the structural information contributes
+over and above it.
+
+%%% (5) Semicolons throughout, and "the results" now points at Section 4.7
+%%% as a whole rather than at one of its three subsections.
+The chapter is organised as follows. Section~\ref{sec:robust-framework}
+introduces robust estimation and the weighted control law;
+Section~\ref{sec:tukey} presents the Tukey weighting;
+Section~\ref{sec:hermite-weight} develops the Hermite-informed weighting;
+Section~\ref{sec:robust-stability} discusses stability;
+Section~\ref{sec:ablation-protocol} defines the ablation protocol;
+Section~\ref{sec:results} reports the results; and
+Section~\ref{sec:ch4-conclusion} concludes.
+%%% sec:results should label Section 4.7 itself. If that section carries no
+%%% label at present, add \label{sec:results} to its heading.
+
+% ======================================================================
+%  OPTIONAL. If you would rather foreshadow the finding, which many
+%  examiners prefer, append this to the ablation paragraph. It is accurate
+%  as of Section 4.7.2 and commits to nothing that the runs do not show.
+%  Do NOT use it unless the occluded results stand as they are.
+%
+%    It will be seen that the first comparison is decisive and the second is
+%    not: robust weighting recovers the pose to within a quarter of a pixel
+%    where the unweighted scheme does not recover it at all, while the two
+%    weightings prove indistinguishable on the single compact occluder
+%    tested here.
+%
+%  WHAT I DID NOT CHANGE
+%  - the cite key26 for M-estimation, which I cannot verify from the PDF;
+%  - \ref{sec:hermite-properties}, which resolved correctly to 3.2.4;
+%  - the passive-tolerance paragraph, which is the strongest in the section
+%    and is now supported by measurement rather than assertion.
+% ======================================================================
