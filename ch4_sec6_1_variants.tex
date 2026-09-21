@@ -1,0 +1,108 @@
+% ======================================================================
+%  Section 4.6.1 --- The three variants.  Corrected. KEEP THIS SECTION.
+%  It is cited from 4.1, 4.2.2 (Remark), 4.3, 4.4 and 4.7.2, and it is
+%  where the chapter says what it is doing. Deleting it would leave five
+%  dangling references and an experiment with no stated design.
+%
+%  A. "and is the DECISIVE comparison of the chapter." Section 4.7.2
+%     reports Variants 2 and 3 differing by 7.6 per cent in rotation and
+%     7.2 per cent in translation, in opposite directions, on one run each
+%     -- a tie. A reader who meets "decisive" here and a tie there will
+%     read the tie as a failed promise rather than as a result. The
+%     sentence can keep its force without predicting its own outcome.
+%
+%  B. "this is EXACTLY the HER-PVS scheme of Chapter 3." No longer exact,
+%     and the cause is my own correction to 4.2.2: with the floor
+%     \varepsilon now in (4.4), setting D = I gives
+%         (H + mu diag H + eps I)^{-1} L^T e
+%     against Chapter 3's
+%         (H + mu diag H)^{-1} L^T e.
+%     The floor is six orders of magnitude below the mean diagonal and does
+%     not affect the step, but "exactly" is now a word too strong, HERE and
+%     in Remark 4.2.1, which uses the same word. Both need the same
+%     qualification -- see the note at the end.
+%
+%  C. A FOURTH CONFIGURATION EXISTS. Section 4.4.4 now reports the
+%     intensity-based structure measure as an ablation. That is a fourth
+%     scheme, and the accounting should say so rather than leave the reader
+%     to discover in 4.4.4 that "three variants" was not the whole of it.
+%
+%  D. Missing \label. Section 4.7.2 refers to this subsection.
+% ======================================================================
+
+\section{Ablation Protocol}
+\label{sec:ablation-protocol}
+
+\subsection{The three variants}
+\label{sec:ablation-variants}
+%%% (D) added.
+
+The evaluation compares three schemes, differing solely in the definition of
+the weighting matrix $\mathbf{D}$ in the control law~\eqref{eq:robust-lm-law}:
+
+\begin{description}
+    \item[Variant 1 --- No weighting.] $\mathbf{D}=\mathbf{I}$. By
+    Remark~\ref{rem:baseline} this recovers the HER-PVS scheme of
+    Chapter~\ref{ch:herpvs}, and serves as the baseline.
+    %%% (B) "exactly" removed here; see the note at the end on Remark 4.2.1.
+    \item[Variant 2 --- Tukey weighting.] $\mathbf{D}=\mathbf{D}^{\mathrm{T}}$
+    from the residual-based weights~\eqref{eq:tukey-weights}. This is the
+    generic robust estimator, structure-blind in the sense of
+    Section~\ref{sec:tukey-limitation}.
+    \item[Variant 3 --- Hermite-informed weighting.]
+    $\mathbf{D}=\mathbf{D}^{\mathrm{H}}$ from the structure-normalised
+    weights~\eqref{eq:hermite-weights}. This is the proposed scheme.
+\end{description}
+
+The comparison of Variant~2 with Variant~1 measures what robust estimation
+contributes. The comparison of Variant~3 with Variant~2 measures what the
+structural information contributes over and above generic robust estimation,
+and it is on this comparison that the claim of the chapter rests.
+%%% (A) "is the decisive comparison of the chapter" -> "it is on this
+%%% comparison that the claim of the chapter rests". Identical weight,
+%%% no prediction of the outcome. 4.7.2 can then report a tie as a finding
+%%% rather than as a shortfall against this sentence.
+
+%%% (C) The fourth configuration, declared where the design is declared.
+Two further points of accounting. The three variants exhaust the comparisons
+in which the weighting matrix is the only quantity varied. A fourth
+configuration, in which Variant~3 is run with the structure measure built from
+the summed rather than the first-order Hermite kernels, is reported separately
+in Section~\ref{sec:hermite-weight-limitation} as an ablation of the measure
+itself; it is not part of the three-way comparison because it differs from
+Variant~3 in the definition of $G$ and not in that of $\mathbf{D}$. And
+Variant~1 carries the floor~\eqref{eq:hessian-floor} along with the other two,
+so that the three differ in the weighting and in nothing else, including their
+safeguards.
+
+% ======================================================================
+%  E. CONSEQUENT EDIT TO REMARK 4.2.1 -- do not skip this one
+%
+%  Remark 4.2.1 currently reads "... reduces H_D to L_R^T L_R and (4.4) to
+%  the control law (3.27) of Chapter 3, exactly." With the floor in (4.4)
+%  that is no longer true. Two sentences fix it:
+%
+%    Setting all weights to unity reduces H_D to L_R^T L_R and (4.4) to the
+%    control law (3.27) of Chapter 3 up to the floor \varepsilon, which is
+%    six orders of magnitude below the mean diagonal of the Hessian and
+%    does not alter the step. The unweighted scheme is therefore not a
+%    different method introduced for comparison, but the degenerate case of
+%    the present formulation.
+%
+%  The rest of the remark stands. The word "exactly" also appears in 4.7.1
+%  ("Variant 1 reproduces the scheme of Chapter 3 to the last recorded
+%  digit ... recovered exactly, and not merely closely") -- that sentence
+%  needs the same treatment, or a note that the floor was applied in the
+%  Chapter 3 runs too. Check which is the case before choosing.
+%
+%  F. NOTATION. D^T and D^H share the bold D used for the Gauss-Hermite
+%  kernels of 4.4.2, and D^T reads as a transpose. If you adopt W for the
+%  weight matrices this subsection becomes W = I, W = W^T, W = W^H. It is
+%  the cleanest place to make the change visible, since all three appear
+%  here in six lines.
+%
+%  G. NOT CHANGED. "differing solely in the definition of D" is right as a
+%  statement about the control law, which is what it is about. Variant 3
+%  does perform six additional convolutions, but that is a cost of forming
+%  D^H and is stated in 4.4.1, not a second independent variable.
+% ======================================================================
