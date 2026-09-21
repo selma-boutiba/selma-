@@ -1,109 +1,106 @@
 % ======================================================================
 %  Section 4.7.2 --- Convergence under occlusion.  WRITTEN.
-%  SECOND VERSION, incorporating the three iteration-400 consoles. Every
-%  number I had marked CONFIRM is now resolved, and two of them turned out
-%  better than I expected. Read items 1-6 before pasting.
+%  THIRD VERSION, on the iteration-600 consoles.
+%
+%  READ ITEMS 1 AND 2 FIRST. One number is still missing and one claim I
+%  made in the previous version has to be withdrawn.
 %
 %  --------------------------------------------------------------------
-%  1. THE RESULTS ARE AT ITERATION 400, NOT 600.
-%     The consoles are headed 400 and their pose values are, digit for
-%     digit, the entries of your table. The nominal table is at 600. The
-%     two configurations are therefore read at different iteration counts,
-%     and 4.6.3 says "the iteration cap is 600 in all runs". One of the
-%     three has to change. My recommendation is in item 4: rerun the
-%     occluded case to 600, for a reason that has nothing to do with
-%     tidiness.
+%  1. THE THIRD CONSOLE IS THE NOMINAL VARIANT 3 RUN, NOT THE OCCLUDED
+%     ONE. Three independent signs, any one of which settles it:
+%       - ||e|| = 6.48404e7, which is the nominal Variant 3 floor quoted
+%         in 4.7.1, not the 1.57e10 of the occluded runs;
+%       - lambda = 0.0407037 and mu = 5.25935e-18, which are the nominal
+%         end-of-run values, against 2.19 and 2.4e-9 for occluded runs;
+%       - its pose converts to (0.101, -0.084, -0.990) mm and
+%         (0.383, -0.030, 0.019) deg, which is the Variant 3 row of the
+%         NOMINAL table, digit for digit.
+%     So I have Variants 1 and 2 occluded at iteration 600 and still need
+%     Variant 3. The table below carries its 400 values, marked.
+%
+%     It was not a wasted screenshot. It resolves a question left open in
+%     4.7.1: the lambda = 0.041 and mu = 5.3e-18 quoted there are
+%     VARIANT 3's, and their exact values are 0.0407037 and 5.25935e-18.
 %
 %  --------------------------------------------------------------------
-%  2. THE TABLE'S UNITS ARE WRONG IN EVERY ROW, IN THREE DIFFERENT WAYS.
-%     Header says mm and degrees. In fact:
-%       - the three variant rows are in METRES and RADIANS;
-%       - the "initial" row is in DECIMETRES (0.4 is 40 mm, 11 is 1100 mm);
-%       - the "desired" row is in METRES (1.3 is 1300 mm).
-%     Two adjacent rows of one column carry units differing by a factor of
-%     ten, under a heading naming a third. The NUMBERS are right -- every
-%     norm I recompute reproduces your console -- so this is purely a
-%     labelling error, but left in place it is the most damaging error in
-%     the chapter: a reader who trusts the heading sees the unweighted
-%     scheme positioning to 1.3 micrometres and the comparison dissolves.
-%     Rebuilt below in micrometres and degrees throughout. Conversion
-%     arithmetic at the foot of the file.
+%  2. WITHDRAW THE COMPUTATIONAL-COST PARAGRAPH. I wrote it last time from
+%     the iteration-400 timings, which gave 8600, 9227 and 11070 ms per
+%     iteration and an apparently beautiful agreement with the convolution
+%     count of 4.4.1. The 600 timings destroy it:
+%         iteration 400 : V1 8600 ms   V2 9227 ms
+%         iteration 600 : V1  591 ms   V2  496 ms
+%     Same code, fourteen times faster, and V2 now FASTER than V1 --
+%     which cannot be true, since Variant 2 does everything Variant 1
+%     does and then computes a median absolute deviation and a Tukey
+%     weight for every residual. The timings are therefore measuring
+%     machine load and display, not the algorithm, and the 20.0 against
+%     21.4 per cent agreement I reported was a coincidence.
+%     The paragraph is removed. If you want the cost claim, it needs
+%     measuring properly: time the weight computation alone with a
+%     std::chrono clock around it, on an otherwise idle machine, averaged
+%     over the run. That is a ten-line change and it would give 4.4.1 a
+%     measurement instead of an estimate.
 %
 %  --------------------------------------------------------------------
-%  3. THE BIAS ARGUMENT IS NOW COMPLETE, AND IT IS BETTER THAN I THOUGHT.
-%       Variant 1 (none)    ||e||^2 = 1.55073e10   pose 1291 um / 1.695 deg
-%       Variant 2 (Tukey)   ||e||^2 = 1.57336e10   pose 2.905 um / 0.0164 deg
-%       Variant 3 (Hermite) ||e||^2 = 1.57311e10   pose 3.130 um / 0.0152 deg
-%     Variant 1 attains a cost 1.4 per cent LOWER than either weighted
-%     variant at a pose four hundred times worse. That is the result.
-%
-%     And the console settles the question I could not answer last time --
-%     whether the printed ||e||^2 is the weighted or the unweighted
-%     residual. It must be the unweighted one. The occluder contributes a
-%     large share of the cost; Variants 2 and 3 reject it; so if the
-%     printed quantity were weighted, theirs would be far SMALLER than
-%     Variant 1's. It is larger. No further check is needed.
+%  3. GOING TO 600 WAS THE RIGHT CALL, AND THE DATA SHOW WHY.
+%       Variant 1: pose identical to seven figures at 400 and 600. Frozen.
+%       Variant 2: translation error 2.909 um -> 2.474 um, better by 15%.
+%     So the runs were still improving where you stopped reading, and
+%     reading at 400 understated Variant 2 by a sixth. Variant 3, whose
+%     commanded velocity at 400 was twelve times Variant 2's, may well
+%     have moved further still -- which is exactly why its 600 value
+%     matters and why the comparison cannot be written until it arrives.
 %
 %  --------------------------------------------------------------------
-%  4. VARIANT 3 HAS NOT FINISHED MOVING AT ITERATION 400.
-%       |Tc| = 1.43e-6 (V1), 2.40e-6 (V2), 2.83e-5 (V3)
-%     Variant 3's commanded velocity is TWENTY TIMES the other two. All
-%     three are far below the convergence threshold, so all three count as
-%     converged, but Variant 3 is still refining its pose while the others
-%     have effectively stopped. Reading all three at 400 may therefore
-%     understate Variant 3 specifically.
-%     This is why the occluded runs should go to 600: it would remove the
-%     inconsistency of item 1 AND answer whether the 7.7 per cent
-%     translation gap closes. It is the cheapest experiment left in the
-%     chapter and it bears directly on the one comparison the chapter
-%     rests on. Until it is run the section reports a tie, as written.
+%  4. THE mu-lambda CHECK NOW PASSES TO BETTER THAN ONE PER CENT, and the
+%     exponent can be recovered from the data rather than assumed:
+%         solving mu ratio = (lambda ratio)^(a/2) gives a = 9.997,
+%         against the 10 of equation (4.6).
+%         predicted mu ratio 6.20e8 against observed 6.16e8  (Variant 1)
+%         predicted mu ratio 4.53e8 against observed 4.51e8  (Variant 2)
+%         both 0.62 per cent low.
+%     Two independently logged quantities, nine orders of magnitude apart,
+%     agreeing to within two thirds of a per cent. This is the strongest
+%     quantitative statement in the chapter and it is now written as one.
 %
 %  --------------------------------------------------------------------
-%  5. THE GAIN EXPLANATION IS CONFIRMED, AND AN INDEPENDENT CHECK PASSES
-%     TO WITHIN TWO PER CENT.
-%       occluded, iteration 400 : lambda = 2.334 / 2.193 / 2.192
-%       nominal,  iteration 600 : lambda = 0.041   (4.7.1)
-%     The gain is some 53 to 57 times larger under occlusion. That is the
-%     whole of the three-orders-of-magnitude accuracy difference between
-%     the two tables, and it is no longer an inference.
+%  5. TWO THINGS TO CHECK IN THE IMPLEMENTATION, both small, both real.
 %
-%     The check: mu and lambda are driven by the same intensity error,
-%     mu ~ ||e_I||^10 and lambda ~ ||e_I||^2, so mu must scale as the
-%     FIFTH POWER of the lambda ratio. Ne is printed as 45.0219 and is
-%     identical in all three runs, so it is not varying and cannot absorb
-%     any discrepancy.
-%       predicted mu ratio : 53.5^5 to 56.9^5 = 4.4e8 to 6.0e8
-%       observed mu ratio  : 2.37e-9 / 5.3e-18 = 4.5e8
-%                            3.24e-9 / 5.3e-18 = 6.1e8
-%     Agreement to about two per cent, from two quantities that were
-%     logged independently. This is the strongest quantitative check in
-%     the chapter and I have written it in.
+%     (a) THE PRINTED lambda AND mu DO NOT SATISFY THE PRINTED EQUATIONS.
+%         The RATIOS are perfect, as item 4 shows, so the exponents are
+%         right. The absolute values are not: with lambda = 2.33425 and
+%         Ne = 45.0219, equations (4.5)-(4.6) as written give
+%         mu = 0.72, against the 3.24e-9 logged. Working backwards, the
+%         error quantity mu uses is smaller than the one lambda uses by a
+%         factor of 6.83 -- the SAME factor at both operating points, so
+%         it is a constant and not an error in my arithmetic. Either the
+%         two are computed from differently normalised errors, or a
+%         constant is missing from one of the two equations as printed in
+%         the thesis. One look at the two lines of code settles it, and it
+%         should be settled, because an examiner who substitutes the
+%         printed Ne into the printed formula will get 0.72.
+%
+%     (b) Ne = 45.0219 occluded, 45.0095 nominal. Nearly constant, and it
+%         is NOT a count of measurements. 4.7.1 and 4.2 write N_e in a way
+%         that reads as one. Say what it is.
 %
 %  --------------------------------------------------------------------
-%  6. TWO THINGS THE CONSOLES REVEAL THAT WERE NOT IN THE CHAPTER AT ALL.
+%  6. 4.7.1's "2.5 GREY LEVELS" IS NOW CHECKABLE AND LOOKS WRONG.
+%     The lambda pair is Variant 3's: 53 at iteration 1, 0.0407037 at 600,
+%     a ratio of 1302. Since lambda is proportional to ||e_I||^2 and Ne is
+%     constant, the intensity error falls by sqrt(1302) = 36.1, so from
+%     72.7 grey levels RMS it reaches 2.01 -- not the 2.5 quoted. Either
+%     2.5 belongs to a different variant than the lambda pair, or it is a
+%     slip. Change 4.7.1 accordingly.
 %
-%     (a) COMPUTATIONAL COST, MEASURED.
-%           V1 8600 ms/iter , V2 9227 ms/iter , V3 11070 ms/iter
-%         Variant 3 costs 20.0 per cent more than Variant 2. Section 4.4.1
-%         argues the structure measure adds six convolutions to the
-%         twenty-eight the feature already requires, which predicts 21.4
-%         per cent. Measured 20.0 against predicted 21.4. Your own cost
-%         argument is confirmed by your own timings and the chapter was
-%         not using it. Now written in as a paragraph.
-%         (The absolute times are simulator times including rendering and
-%         display and mean nothing in themselves; only the ratios do, and
-%         the paragraph says so.)
-%
-%     (b) Ne = 45.0219, NOT A COUNT OF MEASUREMENTS.
-%         Section 4.7.1 writes lambda = ||e_I||^2 / N_e^{0.8} with N_e
-%         reading as a number of measurements. The implementation prints
-%         45.0219, identical in all three runs. Whatever N_e is, it is not
-%         264000 or 76800, and the thesis must say what it is -- this is
-%         one line of the implementation to look up, and it also resolves
-%         the lambda arithmetic I flagged in 4.7.1: N_e being constant
-%         rules out the "N_e counts retained measurements" explanation,
-%         which leaves a mislabelled or mistyped value there. See the note
-%         at the foot.
+%  --------------------------------------------------------------------
+%  7. AND THE THINGS THAT HAVE NOT CHANGED since the last version: the
+%     table's units were wrong in every row (metres and radians under
+%     headings naming millimetres and degrees, and two further unit
+%     systems in the two pose rows); the figure captions named the norm
+%     where the plots show the sum of squares; the setup figure had an
+%     empty label and captioned one image as two variants. All corrected
+%     below, conversion arithmetic at the foot.
 % ======================================================================
 
 \subsection{Convergence under occlusion}
@@ -125,7 +122,6 @@ between them.
 \begin{figure}[H]
     \centering
 
-    % First row: 3 images
     \begin{minipage}[b]{0.30\textwidth}
         \centering
         \includegraphics[width=\textwidth]{Figs/C/fig1_a.PNG}
@@ -152,7 +148,6 @@ between them.
 
     \vspace{5mm}
 
-    % Second row: 2 images
     \begin{minipage}[b]{0.30\textwidth}
         \centering
         \includegraphics[width=\textwidth]{Figs/D/V1.PNG}
@@ -179,12 +174,6 @@ between them.
     one; in~(e) it is confined to the occluder, which no scheme can remove
     because the reference contains no counterpart to it.}
     \label{fig:occ_setup}
-    %%% Your \label{} was empty. Panel (e) was captioned "V2 and V3"; one
-    %%% image cannot be two runs, so it is named as Variant 3 with the
-    %%% equivalence stated -- swap the names if the file is Variant 2's.
-    %%% The two closing clauses are the point of the figure and were not
-    %%% being made: (d) and (e) differ in WHERE the residual lies, not in
-    %%% how much of it there is.
 \end{figure}
 
 \begin{figure}[H]
@@ -291,28 +280,23 @@ between them.
    \label{fig:occ_v3}
 
 \end{figure}
-%%% All three captions said "feature-error norm ||e||", as in 4.7.1. The
-%%% plots and the text are of ||e||^2.
+%%% All three captions said "feature-error norm ||e||". The plots and the
+%%% text are of ||e||^2.
 
 \paragraph{Results:}
 Figures~\ref{fig:occ_v1}--\ref{fig:occ_v3} show the camera velocities, the
 positioning error and the feature error against iteration, and
 Table~\ref{tab:Occlusion_pose} collects the final pose errors. All three runs
-converge in the sense of Section~\ref{sec:metrics}, the commanded velocity
-having fallen to between $1.4\times10^{-6}$ and
-$2.8\times10^{-5}\,\mathrm{m\,s^{-1}}$ by iteration~400, and none diverges or
-oscillates. The separation between the three is entirely a separation in
-accuracy.
+converge in the sense of Section~\ref{sec:metrics}, and none diverges or
+oscillates; the separation between them is entirely a separation in accuracy.
 
-The separation is large. The unweighted scheme settles $1291\,\mu\mathrm{m}$
-and $1.695^{\circ}$ from the desired pose, against $2.9\,\mu\mathrm{m}$ and
-$0.016^{\circ}$ for Tukey weighting and $3.1\,\mu\mathrm{m}$ and
-$0.015^{\circ}$ for the Hermite-informed weighting: a factor of some $440$ in
-translation and $110$ in rotation between the baseline and either weighted
-variant. Weighting an occluded scene repays, many times over, the few tenths
-of a degree it costs on a clean one. The contribution of robust weighting to a
-direct scheme is therefore not marginal but decisive, and this is the
-principal quantitative result of the chapter.
+The separation is large. The unweighted scheme settles $1293\,\mu\mathrm{m}$
+and $1.700^{\circ}$ from the desired pose, against $2.5\,\mu\mathrm{m}$ and
+$0.016^{\circ}$ for Tukey weighting: a factor of some five hundred in
+translation and a hundred in rotation. Weighting an occluded scene repays,
+many times over, the few tenths of a degree it costs on a clean one. The
+contribution of robust weighting to a direct scheme is therefore not marginal
+but decisive, and this is the principal quantitative result of the chapter.
 
 \paragraph{The unweighted scheme minimises a displaced cost.}
 The manner of the baseline's failure is more instructive than its magnitude,
@@ -320,51 +304,64 @@ and it is the clearest demonstration in this thesis of why a direct scheme
 requires robustification. Variant~1 does not fail to converge, nor does it
 come to rest at a higher value of the cost than the weighted variants. It
 attains the \emph{smallest} final feature error of the three,
-$1.5507\times10^{10}$ against $1.5734\times10^{10}$ for Variant~2 and
-$1.5731\times10^{10}$ for Variant~3 --- a cost lower by $1.4\%$ --- at a pose
-error larger by a factor of four hundred. The quantity compared is in each
-case the unweighted residual, so the three are directly comparable, and the
-ordering is unambiguous: the scheme that minimises the cost best is the scheme
-that positions the camera worst.
+$1.5507\times10^{10}$ against $1.5734\times10^{10}$ for Variant~2 --- a cost
+lower by $1.4\%$ --- at a pose error larger by a factor of five hundred. The
+quantity compared is in each case the unweighted residual, so the three are
+directly comparable, and the ordering is unambiguous: the scheme that
+minimises the cost best is the scheme that positions the camera worst.
+%%% That the printed ||e||^2 is the unweighted residual follows from the
+%%% numbers themselves: the occluder contributes a large share of the
+%%% cost and Variants 2 and 3 reject it, so a weighted figure would be far
+%%% SMALLER than Variant 1's. It is larger.
 
 The occluded measurements have not raised the cost at the correct pose; they
 have displaced the pose at which the cost is least, and Variant~1 locates that
-displaced minimum accurately. Two consequences follow. The first is practical:
-no criterion computed from the same corrupted measurements that drive the
-control can detect this failure, which is the argument of
-Section~\ref{sec:metrics} met here as a measurement rather than asserted. A
-practitioner monitoring the residual would conclude that the unweighted run
-was the most successful of the three. The second is that the comparison
-vindicates the formulation of Section~\ref{sec:robust-framework} as a problem
-of estimation rather than of optimisation: the difficulty is not that the cost
-is hard to minimise, but that minimising it is the wrong thing to do.
+displaced minimum accurately. Its pose is unchanged to seven significant
+figures between iterations~$400$ and~$600$: the run is not still converging
+towards the right answer, it has finished converging on the wrong one. Two
+consequences follow. The first is practical: no criterion computed from the
+same corrupted measurements that drive the control can detect this failure,
+which is the argument of Section~\ref{sec:metrics} met here as a measurement
+rather than asserted, since a practitioner monitoring the residual would
+conclude that the unweighted run was the most successful of the three. The
+second is that the comparison vindicates the formulation of
+Section~\ref{sec:robust-framework} as a problem of estimation rather than of
+optimisation: the difficulty is not that the cost is hard to minimise, but
+that minimising it is the wrong thing to do.
+
+%%% ==================================================================
+%%% PARAGRAPH PENDING VARIANT 3'S ITERATION-600 VALUES.
+%%% At iteration 400 the two weighted variants stood at 2.909 um / 0.01643
+%%% deg and 3.137 um / 0.01522 deg, a tie: 7.7 per cent apart in
+%%% translation and 7.4 per cent in rotation, in opposite directions.
+%%% But Variant 2 then improved to 2.474 um by iteration 600, a gain of
+%%% 15 per cent, and Variant 3 was at that point moving twelve times
+%%% faster than Variant 2, so it may have gained more. Send me its
+%%% iteration-600 block and I will write one of these two:
+%%%
+%%%   IF VARIANT 3 REMAINS WITHIN ~10 PER CENT OF VARIANT 2 -- report the
+%%%   tie, in the form drafted below, and rest the case for Variant 3 on
+%%%   the mechanism of 4.7.3 rather than on accuracy.
+%%%
+%%%   IF VARIANT 3 IS NOW CLEARLY AHEAD -- report it, but do NOT call it
+%%%   decisive on one run per variant, which is the standard 4.7.1 set for
+%%%   itself and cannot be abandoned the moment it becomes inconvenient to
+%%%   keep. The honest form is that the structure-normalised weighting
+%%%   attained the smaller error on this configuration, by a margin that a
+%%%   single run cannot establish as systematic, and that the multi-pose
+%%%   study of 4.8 is needed to settle it.
+%%% ==================================================================
 
 \paragraph{The two weighted variants are not separated by this experiment.}
-Variants~2 and~3 differ by $7.7\%$ in translation, in favour of Variant~2, and
-by $7.4\%$ in rotation, in favour of Variant~3. The two differences are of the
-same size and point in opposite directions, and each rests on a single run
-from a single initial pose. By the standard adopted in
-Section~\ref{sec:nominal}, which declined to rank the three variants on
-differences of a few tenths of a degree, this is a tie, and it is reported as
-one. The structure-informed weighting is not shown by this experiment to
-position more accurately than generic Tukey weighting under occlusion.
-%%% This is the sentence you will be asked about in the viva. Having it in
-%%% your own words is a far better position than having it put to you.
+Variants~2 and~3 differ by a few per cent in translation and in rotation, in
+opposite directions, and each figure rests on a single run from a single
+initial pose. By the standard adopted in Section~\ref{sec:nominal}, which
+declined to rank the three variants on differences of a few tenths of a
+degree, this is a tie, and it is reported as one. The structure-informed
+weighting is not shown by this experiment to position more accurately than
+generic Tukey weighting under occlusion.
 
-One qualification should be recorded. At the iteration at which the three are
-compared the commanded velocity of Variant~3 is
-$2.8\times10^{-5}\,\mathrm{m\,s^{-1}}$, an order of magnitude above the
-$1.4\times10^{-6}$ and $2.4\times10^{-6}$ of Variants~1 and~2. All three are
-far below the convergence threshold, but Variant~3 is still refining its pose
-where the other two have effectively stopped, so the comparison is made at a
-point at which one of the three has not yet exhausted its descent. Whether the
-translational difference persists when the runs are continued is not
-established here.
-%%% This is honest and it happens to favour you. Do not overstate it: a
-%%% larger residual velocity could equally indicate chatter from weights
-%%% that are still changing. The run to 600 settles it either way.
-
-What the experiment does show is that the two reach the same accuracy by
+What the experiment does show is that the two reach comparable accuracy by
 different routes, and the route matters for the reason given in
 Section~\ref{sec:hermite-weight-limitation}: the structure-normalised
 weighting suppresses measurements because they carry no usable image
@@ -375,27 +372,6 @@ Section~\ref{sec:weight-maps} examines the two mechanisms directly. A claim
 stronger than parity would require, at a minimum, the study over several
 initial poses identified in Section~\ref{sec:future}, and a weight map for
 Variant~2, which was not recorded.
-
-\paragraph{Computational cost.}
-The three runs were timed over the same $400$ iterations under identical
-conditions, at $8.60$, $9.23$ and $11.07$ seconds per iteration for
-Variants~1,~2 and~3 respectively. The absolute figures are simulator times,
-dominated by image rendering and display, and are not representative of an
-implementation intended for control; the ratios between them, however, are
-meaningful, since the three runs differ only in the weighting. Robust
-weighting costs $7.3\%$ over the unweighted scheme, this being the median
-absolute deviation and the Tukey evaluation over $264\,000$ residuals. The
-structure normalisation costs a further $20.0\%$ over Tukey weighting. That
-figure is close to what the analysis of Section~\ref{sec:hermite-principle}
-predicts: the structure measure requires six convolutions in addition to the
-twenty-eight the feature vector already demands, an increase of $21.4\%$ in
-the dominant cost of the scheme. The agreement indicates that the
-normalisation adds no significant cost beyond the convolutions themselves, the
-per-position arithmetic of~\eqref{eq:Gbar}--\eqref{eq:normalized-residual}
-being negligible against them.
-%%% (6a) Entirely new, and it uses your own timings to confirm your own
-%%% cost argument in 4.4.1. Measured 20.0 per cent against a predicted
-%%% 21.4 per cent.
 
 \paragraph{A remark on the two configurations.}
 The final errors of Table~\ref{tab:Occlusion_pose} are some two to three
@@ -418,22 +394,21 @@ the nominal case is replaced by a velocity proportional to the error alone,
 and the run converges geometrically until it meets the limits of the
 simulation rather than those of the gain schedule.
 
-The measurements confirm this directly. The gain stands at $\lambda=2.33$,
-$2.19$ and $2.19$ for the three variants at iteration~400 of the occluded
-runs, against $\lambda=0.041$ at the end of the nominal run: a factor of some
-fifty-three. An independent check is available, because the damping is driven
+The measurements confirm this, and admit an independent check. At iteration
+$600$ the gain stands at $\lambda=2.334$ and $2.193$ in the occluded runs of
+Variants~1 and~2, against $\lambda=0.0407$ at the end of the nominal run: a
+factor of between $54$ and $57$. The damping provides the check, being driven
 by the same intensity error with a different exponent. Since
 $\mu\propto\norm{\mathbf{e}_I}^{10}$ by~\eqref{eq:mu} while
 $\lambda\propto\norm{\mathbf{e}_I}^{2}$, the ratio of the damping between the
-two configurations must be the fifth power of the ratio of the gain. Fifty-three
-to the fifth power is $4.4\times10^{8}$; the damping stands at
-$2.37\times10^{-9}$ under occlusion against $5.3\times10^{-18}$ in the nominal
-run, a ratio of $4.5\times10^{8}$. The two agree to within two per cent,
-although they were recorded independently and the quantities differ by nine
-orders of magnitude. The account above is therefore not an interpretation
-placed on the data but a relation the data satisfy.
-%%% (5) This replaces the paragraph I could not previously support. It is
-%%% now the strongest quantitative statement in the chapter.
+two configurations must be the fifth power of the ratio of the gain. The
+predicted ratios are $6.20\times10^{8}$ and $4.53\times10^{8}$; the observed
+are $6.16\times10^{8}$ and $4.51\times10^{8}$, both low by $0.62\%$. Solving
+instead for the exponent, rather than assuming it, returns $9.997$ against the
+value of $10$ in~\eqref{eq:mu}. Two quantities logged independently and
+separated by nine orders of magnitude agree to within two thirds of a per
+cent. The account above is therefore not an interpretation placed on the data
+but a relation the data satisfy.
 
 Three observations follow. First, the micrometre accuracies of
 Table~\ref{tab:Occlusion_pose} are a property of the gain schedule under a
@@ -453,7 +428,7 @@ chapter provides, inadvertently, the evidence for it.
 
 \begin{table}[H]
     \centering
-    \caption{Occlusion case: positioning error at iteration~400 for the three
+    \caption{Occlusion case: positioning error at iteration~600 for the three
     weighting variants, relative to the desired pose
     $\mathbf{t}^{*}=(0,0,1300)\,\mathrm{mm}$,
     $\boldsymbol{\omega}^{*}=(0,0,0)^{\circ}$, from the initial pose
@@ -474,83 +449,68 @@ chapter provides, inadvertently, the evidence for it.
                 & $\norm{\Delta\mathbf{t}}$ ($\mu$m)
                 & $\norm{\Delta\boldsymbol{\omega}}$ (deg) \\
         \midrule
-        1 --- none    & $675.6$  & $30.80$ & $-1102.2$ & $-0.2357$  & $-1.6830$  & $-0.0196$   & $1293$  & $1.6996$ \\
-        2 --- Tukey   & $0.0540$ & $2.185$ & $-1.923$  & $+0.01498$ & $+0.00671$ & $-0.000563$ & $2.909$ & $0.01643$ \\
-        3 --- Hermite & $1.825$  & $1.756$ & $-1.855$  & $+0.01457$ & $+0.00432$ & $-0.000475$ & $3.137$ & $0.01522$ \\
+        1 --- none    & $675.61$  & $30.796$ & $-1102.19$ & $-0.23572$ & $-1.68298$ & $-0.019614$ & $1293.1$ & $1.69952$ \\
+        2 --- Tukey   & $-0.0181$ & $2.3040$ & $-0.8999$  & $+0.015123$ & $+0.006479$ & $-0.000543$ & $2.474$ & $0.016462$ \\
+        3 --- Hermite & $1.825$   & $1.756$  & $-1.855$   & $+0.014573$ & $+0.004317$ & $-0.000475$ & $3.137$ & $0.015216$ \\
         \bottomrule
     \end{tabular}
 \end{table}
+%%% ROW 3 IS AT ITERATION 400, THE OTHER TWO AT 600. Replace it as soon as
+%%% you have the occluded Variant 3 block at 600, and delete this comment.
+%%% Do not print the table in this state.
 
 % ======================================================================
-%  CONVERSION ARITHMETIC, so you can check me. Taken from the consoles at
-%  full precision rather than from the rounded table.
+%  CONVERSION ARITHMETIC, from the consoles at full precision.
 %
-%  Translations, metres -> micrometres (x 1e6):
-%    none   : 0.000675612 -> 675.6 ; 3.07954e-5 -> 30.80 ; -0.0011022 -> -1102.2
-%    Tukey  : 5.39557e-8  -> 0.0540; 2.1852e-6  -> 2.185 ; -1.92326e-6 -> -1.923
-%    Hermite: 1.82464e-6  -> 1.825 ; 1.75613e-6 -> 1.756 ; -1.85454e-6 -> -1.855
-%  Rotations, radians -> degrees (x 180/pi):
-%    none   : -0.00411402 -> -0.2357 ; -0.0293736 -> -1.6830 ; -0.000342323 -> -0.01961
-%    Tukey  :  0.000261449 -> 0.01498;  0.000117031 -> 0.006706; -9.82616e-6 -> -0.000563
-%    Hermite:  0.000254288 -> 0.01457;  7.53454e-5  -> 0.004317; -8.28684e-6 -> -0.000475
-%  Norms recomputed from the converted components:
-%    none   : 1293.0 um , 1.6996 deg
-%    Tukey  : 2.909 um  , 0.016434 deg
-%    Hermite: 3.137 um  , 0.015216 deg
+%  Variant 1, occluded, iteration 600
+%    t = 0.000675613, 3.07961e-05, -0.00110219 m
+%      -> 675.61, 30.796, -1102.19 um        |dt| = 1293.1 um
+%    w = -0.00411405, -0.0293736, -0.000342328 rad
+%      -> -0.23572, -1.68298, -0.019614 deg  |dw| = 1.69952 deg
 %
-%  NOTE: these differ in the third digit from the 1291 / 2.905 / 3.130
-%  I quoted last time, because those came from your rounded table and
-%  these come from the console. The console values are the ones to print.
-%  The text above quotes 1291 as "1291 um" in one place -- I have used the
-%  rounded 1293 nowhere in the prose, only "some 440" and "some 110", which
-%  are unaffected. Check the abstract and any other section that quotes
-%  1291 and change it to 1293.
+%  Variant 2, occluded, iteration 600
+%    t = -1.81389e-08, 2.304e-06, -8.99905e-07 m
+%      -> -0.0181, 2.3040, -0.8999 um        |dt| = 2.474 um
+%    w = 0.000263949, 0.000113084, -9.48219e-06 rad
+%      -> 0.015123, 0.006479, -0.000543 deg  |dw| = 0.016462 deg
 %
-%  THE POSE ROWS were dropped from the table. They were a different
-%  quantity from the rest -- absolute poses against final errors -- and
-%  they carried two further unit systems. They are now in the caption and
-%  in 4.6.3. If you want them back as rows they need their own unit
-%  heading and a rule separating them, or the same confusion returns.
+%  Variant 3, occluded, ITERATION 400 -- to be replaced
+%    t = 1.82464e-06, 1.75613e-06, -1.85454e-06 m
+%      -> 1.825, 1.756, -1.855 um            |dt| = 3.137 um
+%    w = 0.000254288, 7.53454e-05, -8.28684e-06 rad
+%      -> 0.014573, 0.004317, -0.000475 deg  |dw| = 0.015216 deg
 %
-%  --------------------------------------------------------------------
-%  CONSEQUENT EDITS ELSEWHERE, arising from the consoles
+%  WHAT CHANGED BETWEEN 400 AND 600
+%    Variant 1  1293.1 -> 1293.1 um, 1.69952 -> 1.69952 deg. Frozen; its
+%               ||e||^2, lambda and mu are also unchanged to six figures.
+%               Its commanded velocity rises slightly, from 1.43e-6 to
+%               2.16e-6, which at that magnitude is numerical jitter about
+%               a stalled pose and not motion.
+%    Variant 2  2.909 -> 2.474 um, better by 15 per cent; rotation flat at
+%               0.01643 -> 0.01646 deg. Commanded velocity falls by a
+%               factor of thirteen, 2.40e-6 -> 1.83e-7.
 %
-%  (i) 4.6.3 says "The iteration cap is 600 in all runs." The occluded runs
-%      are read at 400. Either rerun them to 600 (recommended, see item 4)
-%      or change 4.6.3 to state the cap per configuration and say why they
-%      differ.
+%  THE POSE ROWS of your original table were dropped: they were absolute
+%  poses among final errors and carried two further unit systems. They are
+%  now in the caption and in 4.6.3.
 %
-%  (ii) 4.7.1's lambda arithmetic. The console prints Ne = 45.0219,
-%      IDENTICAL in all three runs. So Ne does not count retained
-%      measurements and does not depend on the weighting, which eliminates
-%      one of the three explanations I offered there. With Ne constant,
-%      lambda is strictly proportional to ||e_I||^2, so
-%           lambda 53 -> 0.041  requires ||e_I||^2 to fall by 1293,
-%           hence ||e_I|| by 35.96, hence a final intensity RMS of
-%           72.7 / 35.96 = 2.02 grey levels, not the 2.5 quoted.
-%      Either the 2.5 belongs to a different variant than the lambda pair,
-%      or one figure is mistyped. Two minutes in the log settles it.
-%      Also: 4.7.1 writes N_e in a way that reads as a count of
-%      measurements. It is 45.0219. Say in 4.2 or 4.7.1 what it actually
-%      is, or a reader will try to reconcile it with P = 264000 and fail.
-%
-%  (iii) The occluded mu of 2.37e-9 is nine orders above the nominal
-%      5.3e-18, so the "Gauss-Newton after the first few iterations"
-%      statement of 4.7.1 holds in the nominal case but is weaker here.
-%      Check whether mu * diag(H) is still negligible against H at
-%      iteration 400 in the occluded runs; if it is not, 4.7.1's sentence
-%      needs "in the nominal case" added to it.
+%  CONSEQUENT EDITS ELSEWHERE
+%   (i) 4.6.3's "the iteration cap is 600 in all runs" is now correct for
+%       this section too, once row 3 is replaced. Nothing to change there.
+%  (ii) 4.7.1: the lambda and mu quoted there are Variant 3's, exactly
+%       0.0407037 and 5.25935e-18. And see item 6 of the header on the
+%       "2.5 grey levels", which should be 2.01 if it belongs to the same
+%       run as the lambda pair.
+% (iii) 4.7.1's "Gauss-Newton thereafter": the occluded mu is 2.4e-9,
+%       nine orders above the nominal 5.3e-18, so check whether
+%       mu*diag(H) is still negligible under occlusion before letting that
+%       sentence stand unqualified for both configurations.
 %
 %  LABELS USED ABOVE
-%    sec:test-configurations       4.6.3
-%    sec:metrics                   4.6.4
-%    sec:nominal                   4.7.1
-%    sec:weight-maps               4.7.3
-%    sec:robust-framework          4.2
-%    sec:hermite-principle         4.4.1
+%    sec:test-configurations  4.6.3      sec:metrics       4.6.4
+%    sec:nominal              4.7.1      sec:weight-maps   4.7.3
+%    sec:robust-framework     4.2        sec:future        future work
 %    sec:hermite-weight-limitation 4.4.4
-%    sec:future                    future work
-%    tab:ch4-nominal               Table of 4.7.1
-%    eq:lambda , eq:mu             gain and damping
-%    eq:Gbar , eq:normalized-residual   4.4.3
+%    tab:ch4-nominal          table of 4.7.1
+%    eq:lambda , eq:mu        gain and damping
 % ======================================================================
