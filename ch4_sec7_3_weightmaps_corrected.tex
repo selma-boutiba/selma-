@@ -1,0 +1,370 @@
+% ======================================================================
+%  Section 4.7.3 --- Weight maps.  Corrected.
+%
+%  The argument of this section is right and it is the section that
+%  carries Variant 3 now that 4.7.2 reports a tie on accuracy. But your
+%  own Table 4.3 contradicts one of its central claims, and correcting
+%  that turns out to explain the nominal penalty of 4.7.1. Nine items.
+%
+%  --------------------------------------------------------------------
+%  A. FIRST, SOMETHING THAT CHANGES MY ADVICE ON 4.7.2.
+%     These maps are at iteration 600 of the OCCLUDED run. So that run
+%     does reach 600, and the consoles you sent me were simply a snapshot
+%     at 400. Do not rerun anything: scroll the occluded log to iteration
+%     600 and quote those pose values in Table~\ref{tab:Occlusion_pose}.
+%     That removes the mismatch with the nominal table at a stroke, and it
+%     also answers whether Variant 3's translation gap closes, since its
+%     commanded velocity at 400 was still twenty times the other two.
+%     Send me the three iteration-600 blocks and I will update 4.7.2.
+%
+%  --------------------------------------------------------------------
+%  B. "THE WEIGHTING HAS BECOME, TO WITHIN A THIRD OF A PERCENT, THE
+%     IDENTITY." Table 4.3 says otherwise, on the same line:
+%         clean, iteration 600 : mean weight 0.789, and only 14.1% of
+%         measurements at w >= 0.99 -- FEWER than the 24.7% at iteration 1.
+%     A weighting whose mean is 0.789 and which leaves six measurements in
+%     seven below unit weight is not the identity and is not close to it.
+%     What falls from 3.5% to 0.3% is the OUTRIGHT REJECTION, which is a
+%     different statement and the one the data support.
+%
+%     The reason it cannot become the identity is worth stating, because
+%     it is structural rather than accidental: the scale is estimated from
+%     the residuals, so it contracts as they do. The ratio e/s does not
+%     shrink as the pose converges, and the Tukey function keeps assigning
+%     intermediate weights however small the residuals become. An
+%     M-estimator with an adaptive scale never switches itself off.
+%
+%     AND THIS EXPLAINS 4.7.1. The nominal table shows Variants 2 and 3
+%     LESS accurate than the baseline on a clean scene, and 4.7.1 attributes
+%     it to valid measurements being rejected. Now you can say why the
+%     effect persists to convergence instead of vanishing with the pose
+%     error: the weighting is still active at iteration 600, because it is
+%     always still active. Three sections lock together once this
+%     paragraph is corrected, so it is worth the rewrite.
+%
+%  --------------------------------------------------------------------
+%  C. 7.4 PER CENT IS THE WRONG COVERAGE FOR ITERATION 600.
+%     "9.5% is the 7.4% it covers together with some two percent of edge
+%     response." The occluder covers 7.4% at the INITIAL pose and 5.80% at
+%     the desired pose, which is where the camera is at iteration 600.
+%     4.7.2 and 4.6.3 both state both figures. So the arithmetic reads
+%     9.5% against 5.80%, a ratio of 1.6, and the excess is not two per
+%     cent but three and a half. Rewritten, and see (D).
+%
+%  --------------------------------------------------------------------
+%  D. THE ARGUMENT AT ITERATION 1 CAN BE MADE MUCH STRONGER.
+%     You write that 4.2% rejected is less than the 7.4% covered, so the
+%     occluder is not yet being rejected. True but weak: it allows that
+%     four-sevenths of the occluder is rejected. The clean run gives you
+%     the control. It rejects 3.5% with no occluder present at all, so the
+%     occluder accounts for at most 4.2 - 3.5 = 0.7 per cent -- under a
+%     TENTH of the region it covers. That is the rigorous form of "not yet
+%     being rejected at all", and it costs one sentence.
+%
+%  --------------------------------------------------------------------
+%  E. WHOSE WEIGHTS, AND HOW MANY? Two problems in one caption.
+%     (i) "the Tukey weights of Variant 3". Variant 2 IS the Tukey
+%         variant. Variant 3's weights are w^H of (4.13) -- the Tukey
+%         function applied to structure-normalised residuals. Calling them
+%         Tukey weights invites the reader to think the figure shows
+%         Variant 2.
+%     (ii) "over the 66,000 measurements of the interior region". There
+%         are 264,000 measurements, four per position, and 4.4.3 defines
+%         w_j one per MEASUREMENT. The four at a position share the same
+%         Gbar but have different residuals e_j, so they have four
+%         DIFFERENT weights. A map with one value per position is
+%         therefore showing one scale, or an aggregate of the four, and
+%         the caption must say which.
+%     This also collides with my correction to 4.6.2, which states that
+%     these percentages are fractions of P. If the statistics are over
+%     66,000 then that sentence in 4.6.2 is wrong and I need to fix it --
+%     tell me which the code computes and I will make them agree.
+%
+%  --------------------------------------------------------------------
+%  F. THE MID-GREY BORDER IS INDISTINGUISHABLE FROM A REAL WEIGHT.
+%     The caption assigns mid-grey to the filter border "so as not to be
+%     read as rejection". But the mean weight is 0.768 to 0.789, so much
+%     of the image IS mid-grey, legitimately. A reader cannot tell the
+%     border from a measurement of weight one half. Crop the border out,
+%     or mark it in a colour no weight can take.
+%     Related: "white denotes retained, black denotes rejected" describes
+%     a binary map. This one is continuous -- that is the whole content of
+%     Table 4.3 -- and the caption should say the grey level is the weight.
+%
+%  --------------------------------------------------------------------
+%  G. THE SELF-REFERENCE OF 4.7.1 AGAIN, TWICE. Both uses of
+%     \ref{sec:ablation-results} mean 4.7.2 and should be sec:occlusion;
+%     as written they point at the parent section 4.7.
+%
+%  H. "DISC" against the "elliptical region" of 4.6.3 and 4.7.2. Four
+%     occurrences. Pick one word for the whole chapter.
+%
+%  I. THE DILATION IS MEASURED AND IS WIDER THAN THE FILTERS EXPLAIN.
+%     Rejected 9.5% against 5.80% occluded is a band of roughly 8 pixels
+%     around the occluder. The 9x9 filters have a half-width of 4, and a
+%     filter centred more than 4 pixels from the boundary cannot see the
+%     occluder at all, so support alone accounts for at most half the band
+%     I measure. I have written the sentence to report the measurement and
+%     the expectation without inventing a mechanism to bridge them, and
+%     flagged it below as something to check by measuring the band
+%     directly off the map. Do not let me assert an explanation here that
+%     the measurement does not support -- it is exactly the kind of claim
+%     we removed from 4.3.2 and 4.5.
+% ======================================================================
+
+\subsection{Weight maps}
+\label{sec:weight-maps}
+
+The pose errors of Sections~\ref{sec:nominal} and~\ref{sec:occlusion}
+establish what the weighting achieves but not how. Since the weights are
+defined one per measurement, they can be displayed at their image positions,
+and doing so for both scene conditions at the beginning and the end of the
+servo makes the mechanism directly observable.
+Figure~\ref{fig:wmaps} collects the four maps: the grey level of each position
+is the weight carried there, white denoting a measurement retained at
+$w_{j}=1$ and black one rejected at $w_{j}=0$, and the ten-pixel border that
+the $9\times9$ filters cannot reach carries no measurement and is excluded.
+The accompanying statistics are collected in Table~\ref{tab:weight-stats}.
+%%% (F) The map is continuous, not binary, and saying so costs nothing.
+%%% The border is now described as excluded rather than as mid-grey; see
+%%% the note at the foot on why mid-grey cannot be used.
+%%% (G) sec:ablation-results -> sec:occlusion.
+
+\paragraph{At the start of the servo the estimator cannot tell the two scenes
+apart:}
+At iteration~1 the clean and the occluded maps are almost indistinguishable:
+the mean weight is $0.768$ against $0.751$, and the fraction of measurements
+rejected outright is $3.5\%$ against $4.2\%$. In neither case does the
+occluder stand out. The clean run provides the control that makes this
+precise: it rejects $3.5\%$ with nothing present to reject, so of the $4.2\%$
+rejected in the occluded run at most $0.7\%$ can be attributed to the
+occluder --- under a tenth of the $7.4\%$ of the image it covers at this pose.
+The occluder is, at the first iteration, very largely retained.
+%%% (D) The comparison against the clean run replaces the comparison
+%%% against 7.4%, and turns "less than" into "under a tenth".
+The reason is the robust scale. With the initial misalignment of some
+$41$~pixels the residual is large over the whole image, so the median
+absolute deviation~\eqref{eq:mad} is large in proportion, and no group of
+measurements is extreme relative to it. What rejection does occur is diffuse
+and spread across the frame, and since the clean scene contains nothing to
+reject, all $13.6\%$ of its strongly down-weighted measurements are valid
+ones. This is precisely the difficulty anticipated in
+Section~\ref{sec:tukey-limitation}, and the nominal map at iteration~1 is its
+direct measurement.
+
+\paragraph{By convergence the two have separated completely:}
+At iteration~600 the clean scene rejects $0.3\%$ of measurements outright,
+against $3.5\%$ at the first iteration, and holds only $3.2\%$ below a quarter
+weight, against $13.6\%$: the map is white but for a faint tracery along the
+strongest edges, where a residual misalignment of a fraction of a pixel still
+registers. The rejection of valid measurements has all but ceased.
+
+It has not, however, given way to the identity, and the distinction matters.
+The mean weight at convergence is $0.789$, and only $14.1\%$ of measurements
+carry a weight above $0.99$ --- fewer, not more, than the $24.7\%$ at the
+first iteration. What has changed is the shape of the distribution rather
+than its centre: the extremes at both ends have been drawn in, leaving the
+bulk of the measurements at intermediate weights. This is structural and not
+accidental. The scale is estimated from the residuals themselves, so it
+contracts as they do, and the ratio $\tilde{e}_{j}/\hat{s}_{\tilde{e}}$ on
+which the Tukey function acts retains a comparable spread however small the
+residuals become. An M-estimator with an adaptive scale does not switch itself
+off when the data cease to contain outliers; it continues to discriminate
+among whatever residuals remain.
+%%% (B) This replaces "the weighting has become, to within a third of a
+%%% percent, the identity", which Table 4.3 contradicts on the same line.
+
+The observation accounts for a result of Section~\ref{sec:nominal} that was
+there reported without explanation. On the clean scene the weighted variants
+position less accurately than the baseline, and the penalty does not vanish as
+the pose error falls. It cannot vanish: the weighting is still active at
+convergence because it is always still active, so a weighted variant continues
+to discard information that the unweighted scheme retains, right down to the
+pose at which the run stalls. The cost of robustness on a clean scene is
+therefore permanent rather than transient, and it is the price paid for the
+two orders of magnitude recovered under occlusion.
+%%% This paragraph did not exist and is the reason to make the correction
+%%% in (B) rather than merely soften the sentence. It closes the loop
+%%% between 4.3.3, 4.7.1 and this section.
+
+The occluded scene at the same iteration rejects $9.5\%$. The occluder appears
+as a solid, sharply bounded black region, and the rejection is no longer
+diffuse: it has concentrated onto the measurements that are corrupted. The
+rejected area exceeds the $5.80\%$ that the occluder covers at this pose by a
+factor of $1.6$, the excess forming a band around it some eight pixels wide.
+Part of this is to be expected: a filter whose $9\times9$ support straddles
+the boundary responds to the occluder although its centre lies outside it, so
+a band of up to the four-pixel half-width of the support must be rejected with
+it. The measured band is wider than that argument accounts for, and the
+remainder is not explained here.
+%%% (C) 7.4% -> 5.80%, since at iteration 600 the camera is at the desired
+%%% pose. (I) The dilation is reported as measured, with the part that is
+%%% explained separated from the part that is not. See the note at the
+%%% foot for the measurement that would close it.
+
+\paragraph{The discrimination is a product of convergence, not a precondition
+for it:}
+Read together, the four panels describe a mechanism that sharpens as the servo
+proceeds. While the pose error is large the misalignment residual dominates,
+the robust scale is large, and the estimator discriminates poorly in both
+scenes alike. As the pose error falls the misalignment residual collapses, the
+scale falls with it, and the occluder --- whose residual does not fall,
+because no pose can cancel it --- becomes the only large residual in the image
+and is rejected decisively. Robust weighting and pose convergence therefore
+reinforce one another, rather than the weighting simply enabling the
+convergence, and the effect is visible in the figure as the divergence of the
+right-hand column from the left.
+
+Two consequences follow for how the preceding sections are read. First, the
+cost identified in Section~\ref{sec:tukey-limitation} has two parts of
+different character. The over-rejection of valid measurements early in the
+servo is transient and largely disappears, falling from $13.6\%$ to $3.2\%$ of
+the clean scene between the first iteration and convergence; the residual
+down-weighting, by contrast, persists, for the reason given above. Second, the
+failure of Variant~1 under occlusion reported in Section~\ref{sec:occlusion}
+is not attributable to any single catastrophic iteration but to the
+accumulation of a bias that the weighted variants remove progressively, and
+which they remove most effectively precisely when the remaining pose error is
+smallest.
+%%% The first consequence previously said the cost "is real but transient".
+%%% After (B) that is only half true, and the half that is not true is the
+%%% half that explains 4.7.1. Split into its two parts.
+%%% (G) second \ref{sec:ablation-results} -> sec:occlusion.
+
+\begin{table}[H]
+    \centering
+    \caption{Distribution of the weights $w^{\mathrm{H}}_{j}$ of Variant~3
+    over the interior region, for the clean and occluded scenes at the first
+    and last iteration. The occluder covers $7.4\%$ of the measurements at the
+    initial pose and $5.80\%$ at the desired pose.}
+    \label{tab:weight-stats}
+    \small
+    \begin{tabular}{@{}llrrrr@{}}
+        \toprule
+        Scene & Iteration & $\bar{w}$ & $w_j\le0.01$ & $w_j<0.25$ & $w_j\ge0.99$ \\
+        \midrule
+        clean    & $1$   & $0.768$ & $3.5\%$ & $13.6\%$ & $24.7\%$ \\
+        clean    & $600$ & $0.789$ & $0.3\%$ & $\phantom{0}3.2\%$ & $14.1\%$ \\
+        occluded & $1$   & $0.751$ & $4.2\%$ & $16.0\%$ & $26.8\%$ \\
+        occluded & $600$ & $0.719$ & $9.5\%$ & $14.2\%$ & $17.8\%$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+%%% (E)(i) "Tukey weights of Variant 3" -> the weights w^H, since Variant 2
+%%% is the Tukey variant and the old wording points at the wrong figure.
+%%% (E)(ii) "the 66,000 measurements" is left out pending your answer on
+%%% what the map displays -- see the note at the foot. Restore the count
+%%% once it is settled, with the right number.
+%%% The single 7.4% became both figures, because the table spans two poses
+%%% and the reader needs the one belonging to each row.
+
+\begin{figure}[H]
+    \centering
+
+    % First row
+    \begin{minipage}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/wmap_v3_1(nominal).png}
+
+        \vspace{1mm}
+        \textbf{(a) Clean scene, iteration 1}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/wmap_v3_600(nominal).png}
+
+        \vspace{1mm}
+        \textbf{(b) Clean scene, iteration 600}
+    \end{minipage}
+
+    \vspace{5mm}
+
+    % Second row
+    \begin{minipage}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/wmap_v3_1(occlusion).png}
+
+        \vspace{1mm}
+        \textbf{(c) Occluded scene, iteration 1}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/wmap_v3_600(occlusion).png}
+
+        \vspace{1mm}
+        \textbf{(d) Occluded scene, iteration 600}
+    \end{minipage}
+
+    \caption{Weights $w^{\mathrm{H}}_{j}$ of Variant~3 displayed at their
+    image positions, the grey level giving the weight: white a measurement
+    retained at $w_{j}=1$, black one rejected at $w_{j}=0$, and the filter
+    border excluded. At the first iteration (left column) the clean and
+    occluded scenes are almost indistinguishable, the occluder not yet being
+    isolated because the residual is large over the whole image and the robust
+    scale large in proportion. At convergence (right column) the clean scene
+    rejects almost nothing, while the occluded scene rejects the occluder as a
+    solid region. The discrimination thus emerges through convergence rather
+    than being a precondition for it.}
+
+    \label{fig:wmaps}
+\end{figure}
+
+% ======================================================================
+%  THREE THINGS TO SETTLE, all quick.
+%
+%  1. WHAT DOES ONE PIXEL OF THE MAP SHOW? The weights are per
+%     measurement, four per position; the map has one value per position.
+%     Look at saveMaps() and tell me whether it writes one scale's weight,
+%     the mean of the four, or the minimum. Then:
+%       - the table caption gets the right count back;
+%       - my sentence in 4.6.2 saying these percentages are fractions of P
+%         gets corrected if it should be N;
+%       - the figure caption can say what is displayed.
+%     If it writes the mean of the four, say so explicitly: a reader who
+%     assumes it shows a single weight will misread the 0.3% figure.
+%
+%  2. MEASURE THE BAND. The eight-pixel band around the occluder is twice
+%     what the filter support explains. Two possibilities worth
+%     distinguishing before you decide what to write:
+%       (a) the band is genuinely eight pixels, in which case something
+%           other than support is at work and it should be found;
+%       (b) the 9.5% and the 5.80% are computed on different bases -- one
+%           over positions and the other over measurements, for instance --
+%           in which case the ratio 1.6 is an artefact and there may be no
+%           excess at all.
+%     (b) would be the tidier outcome and is worth ruling out first, since
+%     item 1 above may resolve it by itself.
+%
+%  3. THE G MAPS. My correction to 4.6.4 says the structure measure is
+%     recorded "displayed in the same way" and reported in this section.
+%     This section shows only weight maps. Either add the G figure here, or
+%     tell me it lives in 4.4.2 as fig:structure-maps and I will repoint
+%     4.6.4 there. One or the other -- at present 4.6.4 promises a figure
+%     that 4.7.3 does not contain.
+%
+%  --------------------------------------------------------------------
+%  CONSEQUENT EDIT TO 4.4.4, arising from item (B)
+%
+%  The ablation paragraph there argues against the intensity-based measure
+%  partly on the ground that "it does not recover the identity when there
+%  is nothing to reject: at convergence on a clean target it still rejects
+%  1.3% of measurements and holds 8.7% below a quarter weight, against
+%  0.3% and 3.2% for the measure adopted". The comparison stands, but the
+%  framing does not: we now know the adopted measure does not recover the
+%  identity either. Reword to the relative claim, which is the one the
+%  numbers support -- that the adopted measure relaxes substantially
+%  further as the pose converges, by a factor of four in both statistics,
+%  whereas the intensity measure's rejection is largely independent of the
+%  pose because brightness does not change as the pose converges. That is
+%  a better argument than the one it replaces, and it is now consistent
+%  with this section.
+%
+%  LABELS USED ABOVE
+%    sec:nominal            4.7.1
+%    sec:occlusion          4.7.2
+%    sec:tukey-limitation   4.3.3
+%    eq:mad                 the robust scale
+%    tab:Occlusion_pose     table of 4.7.2
+% ======================================================================
