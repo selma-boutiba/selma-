@@ -1,0 +1,133 @@
+% ======================================================================
+%  Section 4.5 --- Stability Considerations.  Corrected.
+%
+%  A. BROKEN REFERENCE. \ref{ch:chap:Fundamentals-of-Visual-Servoing}
+%     carries both prefixes, ch: and chap:. Section 4.2.1 uses
+%     \ref{chap:Fundamentals-of-Visual-Servoing}. This is why the PDF
+%     prints "Chapter ??" here.
+%
+%  B. THE SECTION CONTRADICTS ITSELF. Paragraph two says the earlier
+%     analysis "applies verbatim with L_R replaced by DL_R". Paragraph four
+%     then says the system is time-varying and "the classical analysis
+%     applies rigorously only to the frozen system at each instant". The
+%     second is correct; the first must be weakened to match, or the
+%     section concedes in its last paragraph what it asserted in its
+%     second.
+%
+%  C. A MEASUREMENT THAT WAS NEVER MADE. "the rank requirement ... is
+%     monitored in the experiments of Section 4.7.2 through the
+%     conditioning of H_D". Nothing in the chapter reports the conditioning
+%     of H_D, and the implementation does not compute it. This is the same
+%     class of claim as 4.3.2's promise to characterise the admissible
+%     occlusion fraction. The honest replacement is stronger than the
+%     unperformed measurement: the floor of (4.5) makes the rank condition
+%     non-binding by construction, so there is nothing to monitor.
+%
+%  D. THE HAT IN (4.15) IS ON THE WRONG OBJECT. What the control law
+%     actually uses is a damped approximation of the pseudo-inverse, so it
+%     is the pseudo-inverse that is estimated:
+%         \widehat{(DL_R)^{+}}  (DL_R)
+%     and not the pseudo-inverse of an estimated matrix. Both forms appear
+%     in the literature, but only the first describes this control law.
+%     This also connects to a measurement: 4.7.1 reports mu collapsing to
+%     of order 1e-18, so near the desired pose the damped inverse tends to
+%     the true pseudo-inverse and the condition is the right one to state.
+% ======================================================================
+
+\section{Stability Considerations}
+\label{sec:robust-stability}
+
+The introduction of the weighting modifies the closed-loop system and its
+stability must be reconsidered, if only briefly.
+
+The weighted control law~\eqref{eq:robust-lm-law} is the control law of
+Chapter~\ref{ch:herpvs} applied to the weighted feature error
+$\mathbf{D}\mathbf{e}$ and the weighted interaction matrix
+$\mathbf{D}\mathbf{L}_{R}$. With the weights held fixed, the analysis of
+Section~\ref{sec:redundant-stability} of
+Chapter~\ref{chap:Fundamentals-of-Visual-Servoing} therefore carries over with
+$\mathbf{L}_{R}$ replaced by $\mathbf{D}\mathbf{L}_{R}$: since the number of
+features greatly exceeds six, local asymptotic stability in a neighbourhood of
+the desired pose is guaranteed when the symmetric part of
+%%% (A) single prefix. (B) "applies verbatim" -> "with the weights held
+%%% fixed ... carries over", which is what the fourth paragraph says and
+%%% what is actually true.
+\begin{equation}
+    \widehat{\bigl(\mathbf{D}\mathbf{L}_{R}\bigr)^{+}}\,
+    \bigl(\mathbf{D}\mathbf{L}_{R}\bigr)
+    \label{eq:robust-stability-matrix}
+\end{equation}
+is positive definite, the hat denoting the approximation of the pseudo-inverse
+that the control law employs in place of the exact one. As in the unweighted
+case, only local stability can be established, and the existence of local
+minima of the weighted cost cannot be excluded.
+%%% (D) The hat now covers the pseudo-inverse, and the sentence says what
+%%% the hat means, which the original left to the reader.
+
+It is worth noting that the approximation in question is the damped inverse
+of~\eqref{eq:robust-lm-law} rather than a mis-estimated interaction matrix.
+Since the damping $\mu$ decays with the error and is measured in
+Section~\ref{sec:nominal} to reach of order $10^{-18}$ by convergence, the
+damped inverse tends to the exact pseudo-inverse near the desired pose, which
+is precisely the neighbourhood in which the condition above is asserted.
+%%% Added. This ties the stability statement to a measurement and explains
+%%% why the Gauss-Newton condition is the relevant one despite the chapter
+%%% using a Levenberg-Marquardt law.
+
+Two remarks specific to the weighted case are in order.
+
+%%% (C) The unperformed measurement is replaced by the argument that makes
+%%% it unnecessary.
+First, the rank requirement noted in Section~\ref{sec:weighted-law} is the
+binding constraint in principle: a sufficiently aggressive rejection, or an
+occlusion covering the greater part of the informative image content, can
+leave too few effective measurements, and because the damping is scaled by
+$\mathrm{diag}(\mathbf{H}_{\mathbf{D}})$ it cannot restore a direction that
+the weighting has removed. In the implementation this failure mode is
+forestalled by the fixed floor $\varepsilon$ of~\eqref{eq:hessian-floor},
+which bounds the damped Hessian away from singularity whatever the weights,
+so the constraint does not bind in practice and the control law remains
+defined by construction. What the floor cannot do is restore the information
+that the rejected measurements carried; the consequence of removing too many
+is a loss of accuracy rather than a divergence, and no divergence was observed
+in any run reported in Section~\ref{sec:results}.
+%%% If you would rather report the conditioning after all, it is one line:
+%%%   std::cout << "cond(H_D) = " << Hsd.cond() << std::endl;
+%%% inside the loop. That would let the claim be made as a measurement
+%%% instead of an argument. As it stands the argument is sound and the
+%%% measurement is not needed.
+
+Second, the weights are recomputed at every iteration and are functions of the
+current image, so the closed-loop system is time-varying and the analysis
+above applies rigorously only to the frozen system at each instant. This is
+the standard situation for iteratively reweighted schemes in visual
+servoing~\cite{key26}. The step from the frozen analysis to the time-varying
+system rests on the weights varying slowly relative to the control, which is
+plausible because the image content evolves continuously along the trajectory
+but is not verified here directly. What can be said is that the observable
+consequence of a violation did not occur: the trajectories of
+Section~\ref{sec:results} show no oscillation, no sign reversal and no
+secondary minimum, and no instability attributable to the reweighting was
+observed in any run.
+%%% (F) "in practice the weights vary slowly" was an assertion. It is now
+%%% labelled as the assumption it is, and the observable consequence is
+%%% reported instead. A direct check is cheap if you want one: log
+%%% || D_k - D_{k-1} ||_F against the iteration and confirm it is small
+%%% compared with || D_k ||_F.
+
+% ======================================================================
+%  LABELS USED ABOVE
+%    sec:redundant-stability                 Chapter 1, the redundant-case
+%                                            stability analysis
+%    chap:Fundamentals-of-Visual-Servoing    Chapter 1
+%    sec:weighted-law                        4.2.2
+%    eq:hessian-floor                        the floor added to 4.2.2
+%    sec:nominal                             4.7.1
+%    sec:results                             4.7
+%
+%  ONE THING I DID NOT CHANGE
+%  "since the number of features greatly exceeds six" is correct as stated
+%  -- P = 264000. Under occlusion the weighting rejects some 9.5% of them,
+%  which leaves about 239000, so the inequality is not in danger and does
+%  not need qualifying.
+% ======================================================================
