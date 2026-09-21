@@ -1,0 +1,111 @@
+% ======================================================================
+%  Section 4.6.2 --- Controlled conditions.  Corrected. KEEP.
+%
+%  A. A CONTRADICTION WITH 4.6.4 THAT THE RESULTS EXPOSE.
+%     This subsection lists "the stopping criterion" among the quantities
+%     held fixed but does not say what it is. Section 4.6.4 then defines
+%     failure as not reaching the stopping threshold within the iteration
+%     cap. The threshold in the implementation is ||e||^2 > 10^4, and
+%     4.7.1 reports the feature error settling three to four orders of
+%     magnitude above it. No run reaches it. By 4.6.4's definition every
+%     run in the chapter failed. The criterion has to be stated here, and
+%     4.6.4's definition of convergence has to be the one 4.7.1 actually
+%     uses.
+%
+%  B. P IS NEVER GIVEN A VALUE. It is introduced in 4.2.1 and used in
+%     4.3.2 (the breakdown point), 4.4.3 (where N was needed alongside it)
+%     and 4.7.3 (percentages of the measurements). This subsection is where
+%     the configuration is declared and is the place to state it.
+%
+%  C. "the occluded target texture" is held fixed across the three
+%     variants but not across the two test configurations, the nominal case
+%     having no occluder at all. As written it reads as though one texture
+%     serves throughout.
+%
+%  D. The initial and desired poses are listed as held fixed but never
+%     given. They belong in 4.6.3, which is currently an empty heading.
+% ======================================================================
+
+\subsection{Controlled conditions}
+\label{sec:ablation-conditions}
+
+Within each test configuration, everything other than $\mathbf{D}$ is held
+fixed across the three variants: the Hermite filter bank and its four scales,
+the interaction matrix~\eqref{eq:stacked-L}, the adaptive gain and
+damping~\eqref{eq:lambda}--\eqref{eq:mu}, the floor~\eqref{eq:hessian-floor}
+on the damped Hessian, the sampling period, the stopping criterion, the
+iteration cap, and the initial and desired poses. The target texture is fixed
+across the variants of a given configuration and is what distinguishes the two
+configurations of Section~\ref{sec:test-configurations} from each other.
+%%% (C) "within each test configuration" at the front, and the texture
+%%% named as the thing that varies BETWEEN configurations rather than
+%%% listed among the constants.
+The implementation, the simulation platform~\cite{key18} and the camera
+configuration are those described in Section~\ref{sec:her-sim-config} of
+Chapter~\ref{ch:herpvs}. The weighting is therefore the sole independent
+variable.
+
+%%% (B) The dimensions, stated once, where the configuration is declared.
+The images are $320\times240$ pixels and the filters have $9\times9$ support,
+so the ten-pixel border they cannot reach leaves an interior of
+$220\times300=66\,000$ positions carrying measurements. With four scale
+responses stacked at each position the feature vector has dimension
+$P=264\,000$, and the quantity $N$ of~\eqref{eq:Gbar} is $66\,000$. The
+percentages of measurements quoted in Section~\ref{sec:weight-maps} are
+fractions of $P$; the structure measure is defined on the $N$ positions.
+
+%%% (A) The criterion, stated, with its consequence.
+The stopping criterion inherited from the implementation halts a run when the
+feature error falls below an absolute threshold,
+$\norm{\mathbf{e}}^{2}<10^{4}$, or when the iteration cap is reached. As
+Section~\ref{sec:nominal} reports, the feature error settles three to four
+orders of magnitude above that threshold in every run, so the absolute
+criterion is never met and every run proceeds to the cap; results are read at
+iteration~600, by which point the commanded velocity has fallen below
+$10^{-3}\,\mathrm{m\,s^{-1}}$ in all cases. Convergence is therefore assessed
+throughout this chapter against the commanded velocity rather than against the
+inherited threshold, and Section~\ref{sec:metrics} is to be read accordingly.
+%%% Without this paragraph, 4.6.4's "a run being declared to have failed if
+%%% the stopping threshold is not reached within the iteration cap" declares
+%%% every run in the chapter a failure.
+
+Two points of procedure are recorded for reproducibility. The Tukey tuning
+constant $c$ is held at the same value in Variants~2 and~3, so that the two
+differ in the argument supplied to the weight function and not in the function
+itself. And the robust scale estimate is computed, in each variant, from the
+residuals that variant actually submits to the estimator: from $e_{j}$ in
+Variant~2 and from $\tilde{e}_{j}$ in Variant~3.
+
+% ======================================================================
+%  E. CONSEQUENT EDIT TO 4.6.4 -- required, not optional
+%
+%  4.6.4 currently reads, in part:
+%     "... and whether the run converged at all, a run being declared to
+%      have failed if the stopping threshold is not reached within the
+%      iteration cap."
+%  Replace with something of the form:
+%     "... and whether the run converged, a run being taken as converged
+%      once the commanded velocity falls below 10^{-3} m/s, for the reason
+%      given in Section 4.6.2."
+%  It also records "the number of iterations to convergence" as a metric.
+%  That number is only defined once convergence is defined; either
+%  recompute it against the velocity criterion or drop it, since the
+%  chapter does not in fact report it anywhere.
+%
+%  F. 4.6.3 "Test configurations" is still an empty heading and is where
+%  the poses belong. It needs, at minimum:
+%     nominal   : reference and servoing images both from the clean texture
+%     occluded  : reference from the clean texture, servoing images from
+%                 the occluded one, disc covering 7.4% of the measurements
+%                 at the initial pose and 5.80% at the desired pose
+%     both      : t_0 = (40, -40, 1100) mm, omega_0 = (12, -12, 6) deg
+%                 t* = (0, 0, 1300) mm,     omega* = (0, 0, 0) deg
+%                 initial displacement about 41 px mean, 65 px worst case
+%  I can draft it if you send me the heading.
+%
+%  G. NOT CHANGED
+%  The two procedural points at the end are the strongest part of the
+%  subsection. Holding c fixed and computing each scale from the residuals
+%  the variant actually submits are precisely the two things a sceptical
+%  reader would check, and stating them pre-empts the check.
+% ======================================================================
