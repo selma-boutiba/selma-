@@ -1,0 +1,474 @@
+% ======================================================================
+%  Section 4.7.1 --- Nominal case.  Corrected.
+%
+%  This is much the strongest section of the chapter and most of it needs
+%  nothing. Nine items, of which four are errors, three are consistency
+%  repairs following from edits we made upstream, and two are additions
+%  that the numbers in your own table already support.
+%
+%  ERRORS
+%  A. THE SECTION REFERS TO ITSELF. "The decisive comparison of the chapter
+%     is accordingly the one made in Section~\ref{sec:ablation-results}."
+%     That label belongs to 4.7, the section this subsection is inside, so
+%     the sentence directs the reader to its own parent. It means 4.7.2.
+%
+%  B. THE THREE FIGURE CAPTIONS CONTRADICT THE TEXT. All three say
+%     "feature-error norm $\lVert\mathbf{e}\rVert$". The text says, in
+%     terms, "The quantity reported is the sum of squares
+%     $\norm{\mathbf{e}}^{2}$ rather than the norm". The plots are of
+%     ||e||^2. Captions corrected.
+%
+%  C. "no curve exhibits a plateau, a rebound or a secondary minimum",
+%     followed two sentences later by "the feature error does not decay to
+%     zero but settles on a floor". A floor is a plateau. The claim that
+%     is meant, and that the curves support, is that none plateaus BEFORE
+%     converging.
+%
+%  D. "the three variants ... Variant 3 recovers part of that loss". True
+%     in rotation, FALSE in translation, where the ordering is
+%     0.336 < 0.806 < 0.999 and Variant 3 is the worst of the three. The
+%     paragraph discusses rotation only and does not say so. An examiner
+%     reading the table will see it immediately, and silence on the point
+%     reads worse than the result itself does. See (H): the translation
+%     numbers have an explanation, and giving it turns the problem into a
+%     finding.
+%
+%  CONSEQUENT REPAIRS (from edits made upstream in this pass)
+%  E. THREE STALE LABELS.
+%       sec:ablation-measure  -> sec:hermite-weight-limitation  (4.4.4;
+%            we settled on YOUR label and dropped my two)
+%       sec:implementation    -> eq:hessian-floor               (4.2.2;
+%            the floor is an equation there, not a section elsewhere)
+%       sec:ablation-protocol -> sec:metrics                    (4.6.4;
+%            the second of the two uses, "the criterion stated in")
+%
+%  F. "decisive comparison" was removed from 4.6.1 for the reason that
+%     4.7.2 reports Variants 2 and 3 differing by 7.6 per cent in rotation
+%     and 7.2 per cent in translation IN OPPOSITE DIRECTIONS -- a tie. The
+%     phrase survived here. Same treatment, or the chapter promises twice
+%     what it delivers once.
+%
+%  G. THE "FEATURE ERROR IS NOT A PROXY" ARGUMENT IS NOW MADE TWICE. My
+%     correction to 4.6.4 added it as policy, where the metrics are
+%     declared. Here it should be the evidence for that policy, not a
+%     second statement of it. Trimmed accordingly -- the measurement stays,
+%     the restatement of the convergence criterion goes.
+%
+%  ADDITIONS YOUR OWN TABLE SUPPORTS
+%  H. THE DEGRADATION IS ALMOST ENTIRELY IN TWO COMPONENTS. Of the
+%     translational error, the depth term accounts for 90, 98 and 99 per
+%     cent of the norm in Variants 1, 2 and 3; of the rotational error,
+%     omega_x accounts for the bulk in all three. Weighting does not
+%     degrade the pose uniformly -- it degrades depth and the rotation
+%     coupled to it. That is worth a sentence: it is consistent with the
+%     rank discussion of 4.5, and it explains (D).
+%
+%  I. AN ARITHMETIC CHECK YOU SHOULD RUN -- see the note at the foot.
+%     The quoted gain values and the quoted intensity errors do not appear
+%     to be consistent with each other.
+% ======================================================================
+
+\section{Results and Discussion}
+\label{sec:ablation-results}
+
+\subsection{Nominal case: behaviour without occlusion}
+\label{sec:nominal}
+
+The three variants are first compared on the clean target, with no occlusion
+present. Two questions are settled by this run. The first is what the weighted
+formulations cost when there is nothing to reject:
+Remark~\ref{rem:baseline} establishes algebraically that $\mathbf{D}=\mathbf{I}$
+reduces~\eqref{eq:robust-lm-law} to the control law of
+Chapter~\ref{ch:herpvs}, but it says nothing about $\mathbf{D}\neq\mathbf{I}$
+acting on uncorrupted measurements, and that is what the nominal run measures.
+The second is a matter of attribution: the nominal behaviour of each variant
+must be known before any difference observed under occlusion can be ascribed to
+the treatment of the occlusion rather than to the weighting altering the
+control law independently of it.
+
+\begin{figure}[H]
+    \centering
+
+    \begin{minipage}[b]{0.23\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/C/fig1_a.PNG}
+
+        \vspace{1mm}
+        \textbf{(a)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.23\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/b.PNG}
+
+        \vspace{1mm}
+        \textbf{(b)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.23\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/c.PNG}
+
+        \vspace{1mm}
+        \textbf{(c)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.23\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/d.PNG}
+
+        \vspace{1mm}
+        \textbf{(d)}
+    \end{minipage}
+
+   \caption{Nominal case, experimental setup: (a)~desired image
+   $\mathbf{I}^{*}$; (b)~current image $\mathbf{I}$ at the initial pose;
+   (c)~initial image error $\mathbf{I}-\mathbf{I}^{*}$; (d)~final image error
+   at convergence, Variant~3.}
+   %%% (d) must say which variant. There are three final images and one
+   %%% panel. Change "Variant~3" if the panel is from another run.
+\label{fig:nom_setup}
+
+\end{figure}
+
+\paragraph{Conditions:}
+The two poses, the textures and the iteration cap are those of
+Section~\ref{sec:test-configurations}: the reference image $\mathbf{I}^{*}$ is
+acquired from the unoccluded target at the desired pose, the images acquired
+during servoing are taken from the same unoccluded target, so that the residual
+arises solely from the pose error and no measurement is corrupted, and the
+target covers the whole image at both poses so that no measurement is lost
+off-frame. All remaining quantities are those fixed in
+Section~\ref{sec:ablation-conditions} and are identical across the three
+variants. That the three runs began from the same image is confirmed by the
+initial intensity error, which took the same value $4.06\times10^{8}$ in all
+three.
+%%% (G, partial) The poses, the pixel displacements and the derivation of
+%%% P = 264000 were stated in 4.6.2 and 4.6.3 and are here a third time.
+%%% Cut to cross-references. What is kept is the one thing specific to this
+%%% run and not stated anywhere else -- the identical initial intensity
+%%% error, which is a genuine control and worth its sentence.
+%%%
+%%% IF YOU DECIDE NOT TO USE MY DRAFT OF 4.6.3, restore the two sentences
+%%% giving t_0, omega_0, t*, omega* and the 41/65 pixel displacement here,
+%%% or the poses will appear nowhere in the chapter.
+
+\begin{figure}[htbp]
+    \centering
+
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/camera velocitiesV1.PNG}
+
+        \vspace{1mm}
+        \textbf{(a)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/poitiongerrorV1.PNG}
+
+        \vspace{1mm}
+        \textbf{(b)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/errV1.PNG}
+
+        \vspace{1mm}
+        \textbf{(c)}
+    \end{minipage}
+
+   \caption{Nominal case, Variant~1 (no weighting, $\mathbf{D}=\mathbf{I}$):
+   (a)~camera velocities; (b)~translational and rotational positioning errors;
+   (c)~feature error $\lVert\mathbf{e}\rVert^{2}$.}
+   %%% (B) corrected here and in the two captions below.
+
+   \label{fig:nom_v1}
+
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/cameraveloctiesV2PNG.PNG}
+
+        \vspace{1mm}
+        \textbf{(a)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/posiitionerrorV2.PNG}
+
+        \vspace{1mm}
+        \textbf{(b)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/ERRV2.PNG}
+
+        \vspace{1mm}
+        \textbf{(c)}
+    \end{minipage}
+
+    \caption{Nominal case, Variant~2 (Tukey weighting): (a)~camera velocities;
+    (b)~translational and rotational positioning errors; (c)~feature error
+    $\lVert\mathbf{e}\rVert^{2}$.}
+
+    \label{fig:nom_v2}
+
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/caeravelocitiesV3.PNG}
+
+        \vspace{1mm}
+        \textbf{(a)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/poositionerrorV3.PNG}
+
+        \vspace{1mm}
+        \textbf{(b)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/ERROEV3.PNG}
+
+        \vspace{1mm}
+        \textbf{(c)}
+    \end{minipage}
+
+    \caption{Nominal case, Variant~3 (Hermite-informed weighting): (a)~camera
+    velocities; (b)~translational and rotational positioning errors;
+    (c)~feature error $\lVert\mathbf{e}\rVert^{2}$.}
+
+     \label{fig:nom_v3}
+\end{figure}
+
+\paragraph{Results:}
+Figures~\ref{fig:nom_v1}--\ref{fig:nom_v3} show the camera velocities, the
+positioning error and the feature error against iteration, and
+Table~\ref{tab:ch4-nominal} collects the final pose errors. All three variants
+position the camera to better than one millimetre and better than half a
+degree, which is the accuracy expected of a direct scheme at
+convergence~\cite{key?}, and the decay is monotone in every case: no curve
+plateaus before converging, rebounds, or settles on a secondary minimum.
+%%% (C) "no curve exhibits a plateau" -> "no curve plateaus BEFORE
+%%% converging". As written it was contradicted by the next paragraph,
+%%% which reports the terminal floor.
+%%% ~\cite{key?}: the sub-millimetre figure is Collewet and Marchand's, and
+%%% the claim needs their reference or it reads as an assertion. Insert the
+%%% key you use for photometric visual servoing in Chapter 3.
+Two observations require comment, as both bear on how the remaining sections
+must be read.
+
+First, the feature error does not decay to zero but settles on a floor:
+$4.35\times10^{7}$, $1.04\times10^{8}$ and $6.48\times10^{7}$ for
+Variants~1,~2 and~3, while the commanded velocity falls to between
+$1.4\times10^{-4}$ and $3.7\times10^{-4}\,\mathrm{m\,s^{-1}}$ and the pose
+error becomes sub-millimetre. The quantity reported is the sum of squares
+$\norm{\mathbf{e}}^{2}$ rather than the norm, so over $264\,000$ components
+these floors correspond to root-mean-square residuals of $13$, $20$ and $16$
+per component respectively, against $1149$ at the first iteration.
+%%% Was "about 16 per component", which is Variant 3's value presented as
+%%% though it were common to all three. sqrt(4.35e7/264000) = 12.8 and
+%%% sqrt(1.04e8/264000) = 19.8, so the three differ by half again. Giving
+%%% all three costs four words and removes a number an examiner can falsify
+%%% with a calculator.
+The run terminates not because the residual has been minimised but because the
+adaptive gain has decayed with it: by~\eqref{eq:lambda} the gain is
+proportional to the intensity error, $\lambda=\norm{\mathbf{e}_I}^{2}/N_{e}^{0.8}$,
+so it falls from $\lambda\simeq53$ at the first iteration to $\lambda=0.041$ at
+iteration~600. Since the commanded velocity is in addition proportional to the
+residual itself, $\norm{\mathbf{V}_c}$ decays much faster than the error and
+vanishes while a small misalignment remains. The minimisation is not at fault:
+over the same run the feature error falls by three and a half orders of
+magnitude, the commanded velocity from $0.566$ to
+$2.3\times10^{-4}\,\mathrm{m\,s^{-1}}$, and the intensity error from $72.7$ to
+$2.5$ grey levels root-mean-square. It is also worth recording that the damping
+becomes inactive very early: by~\eqref{eq:mu}, $\mu\propto\norm{\mathbf{e}_I}^{10}$,
+so $\mu$ falls from $1.9\times10^{-2}$ to $5.3\times10^{-18}$ over the same run.
+The scheme is a Levenberg--Marquardt method only during the first few iterations
+and a Gauss--Newton method thereafter, which is why the fixed floor added to the
+damped Hessian in~\eqref{eq:hessian-floor} is what actually guarantees
+invertibility once robust rejection is active.
+%%% (E) sec:implementation -> eq:hessian-floor.
+
+Second, and more consequentially, the feature error cannot be read as a proxy
+for positioning accuracy across variants, which is why
+Section~\ref{sec:metrics} admits it as a convergence indicator only. The
+nominal run shows why directly. An alternative structure measure, reported in
+Section~\ref{sec:hermite-weight-limitation}, attains a feature-error floor of
+$6.59\times10^{7}$ against $6.48\times10^{7}$ here --- a difference of two per
+cent --- yet its rotational pose error is smaller by a factor of four,
+$0.088^{\circ}$ against $0.385^{\circ}$. The two rankings are not merely
+uncorrelated but reversed: the variant with the larger residual is the more
+accurately positioned of the two. The reason is that the residual of a weighted
+variant is shaped not only by the misalignment but by which measurements the
+estimator retains, so the floor mixes an accuracy term with a coverage term and
+a variant can lower it by rejecting the measurements that are hardest to
+satisfy. The pose error of Table~\ref{tab:ch4-nominal} is accordingly the
+accuracy metric throughout this chapter.
+%%% (E) sec:ablation-measure -> sec:hermite-weight-limitation.
+%%% (G) The restatement of the convergence criterion and of the 10^4
+%%% threshold is cut: 4.6.2 states it and 4.6.4 now carries the policy. What
+%%% is kept here is the evidence, which belongs in the results.
+%%% The direction of the discrepancy is now given. "differs by a factor of
+%%% four" concealed that the discarded variant is the better positioned,
+%%% which is the fact that makes the point. Concealing it would not have
+%%% survived 4.4.4, where the same two numbers appear, and stating it here
+%%% is stronger: a reversal is a much better argument than a decorrelation.
+
+\paragraph{What the nominal case does and does not establish:}
+The three variants do not coincide on a clean scene. Weighting is therefore not
+transparent in the absence of outliers, and the differences in
+Table~\ref{tab:ch4-nominal} are real rather than numerical. In rotation,
+Variant~2 reaches $0.60^{\circ}$ against the baseline's $0.22^{\circ}$, which
+is the cost anticipated in Section~\ref{sec:tukey-limitation}: while the pose
+error is still large, valid measurements in photometrically sensitive regions
+produce legitimately large residuals, a fraction of which a redescending
+estimator rejects, so a weighted variant discards information the unweighted
+scheme retains. Variant~3 recovers part of that loss, reaching $0.38^{\circ}$,
+which is consistent with the structure normalisation restoring measurements
+that the unnormalised estimator rejects on the strength of their residual
+alone. In translation the ordering is the reverse: $0.336$, $0.806$ and
+$0.999\,\mathrm{mm}$, with Variant~3 the least accurate of the three.
+%%% (D) The reversal, stated. It is visible in the table on the facing page
+%%% and passing over it in silence costs more than reporting it.
+
+%%% (H) The explanation, which your own table supplies.
+The two orderings are less contradictory than they appear once the error is
+resolved into components. The degradation is not spread over the six degrees of
+freedom but concentrated in two. Of the translational error, the depth term
+$\Delta T_z$ accounts for $90$, $98$ and $99$ per cent of the norm in
+Variants~1,~2 and~3 respectively; of the rotational error, $\Delta\omega_x$
+accounts for the greater part in all three. Depth and the rotation about the
+axis coupled to it are the directions least well constrained by a
+fronto-parallel photometric measurement, since a small retreat and a small
+tilt produce image changes of comparable form. Removing measurements can only
+worsen the conditioning of directions that were already the weakest, and it is
+in precisely those two that the weighted variants lose accuracy, while the four
+well-constrained components remain at or below $0.2$ in every variant. The
+penalty for weighting a clean scene is therefore not a uniform loss of
+precision but a further softening of the two degrees of freedom that a direct
+scheme constrains least securely. This is consistent with the rank argument of
+Section~\ref{sec:robust-stability}, though it is not established by it: the
+conditioning of $\mathbf{H}_{\mathbf{D}}$ is not measured here.
+%%% The hedge in the last sentence is deliberate. 4.5 now says explicitly
+%%% that the conditioning is not monitored, so this paragraph must not be
+%%% allowed to imply that it was.
+
+No ordering of the three is asserted on this evidence. These are single runs
+from a single initial displacement, and differences of a few tenths of a degree
+are of the same order as the spread a different displacement would plausibly
+produce; establishing a ranking would require the study over several initial
+poses that Section~\ref{sec:future} identifies as outstanding. What the nominal
+case establishes is narrower and sufficient for what follows: that all three
+variants converge, that none is destabilised by the weighting, that the penalty
+for weighting a clean scene is confined to a few tenths of a degree in rotation
+and a fraction of a millimetre in translation and falls almost entirely on two
+degrees of freedom, and that this penalty must be subtracted from any advantage
+observed under occlusion. The comparison on which the claim of the chapter
+rests is accordingly the one made in Section~\ref{sec:occlusion}, where the
+measurements are corrupted and the weighting has something to reject.
+%%% (A) The self-reference is repaired: sec:ablation-results is THIS
+%%% section, and the sentence means 4.7.2.
+%%% (F) "The decisive comparison of the chapter" -> "The comparison on which
+%%% the claim of the chapter rests", the same wording now used in 4.6.1. The
+%%% phrase was removed there because 4.7.2 reports a tie between Variants 2
+%%% and 3; it must not survive here.
+
+\begin{table}[t]
+    \centering
+    \caption{Nominal case (unoccluded target): final pose error at
+    iteration~600, relative to the desired pose $(0,0,1300)\,\mathrm{mm}$,
+    $(0,0,0)^{\circ}$. Translations in millimetres, rotations in degrees.
+    No run reached the absolute threshold on $\norm{\mathbf{e}}^{2}$; all three
+    satisfied $\norm{\mathbf{V}_c}<10^{-3}\,\mathrm{m\,s^{-1}}$. Images of
+    $320\times240$ pixels; feature dimension $264\,000$. One run per variant:
+    see the discussion above on what may and may not be concluded.}
+    \label{tab:ch4-nominal}
+    \small
+    \begin{tabular}{@{}lrrrrrrrr@{}}
+        \toprule
+        & \multicolumn{3}{c}{Translation (mm)}
+        & \multicolumn{3}{c}{Rotation (deg)}
+        & \multicolumn{2}{c}{Norm} \\
+        \cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-9}
+        Variant & $\Delta T_x$ & $\Delta T_y$ & $\Delta T_z$
+                & $\Delta\omega_x$ & $\Delta\omega_y$ & $\Delta\omega_z$
+                & $\norm{\Delta\mathbf{t}}$ & $\norm{\Delta\boldsymbol{\omega}}$ \\
+        \midrule
+        1 --- none    & $+0.053$ & $-0.140$ & $-0.301$ & $+0.168$ & $-0.139$ & $+0.015$ & $0.336$ & $0.219$ \\
+        2 --- Tukey   & $+0.004$ & $-0.165$ & $-0.789$ & $+0.568$ & $-0.195$ & $-0.007$ & $0.806$ & $0.601$ \\
+        3 --- Hermite & $+0.101$ & $-0.084$ & $-0.990$ & $+0.383$ & $-0.030$ & $+0.019$ & $0.999$ & $0.385$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+% ======================================================================
+%  (I) ONE ARITHMETIC CHECK BEFORE YOU SUBMIT. I could not make two of your
+%  numbers agree, and an examiner who tries will hit the same wall.
+%
+%  The text states lambda = ||e_I||^2 / N_e^0.8 with N_e fixed over a run.
+%  Then lambda is proportional to ||e_I||^2 and the two must fall by the
+%  same factor. But:
+%      lambda:  53 -> 0.041            a factor of 1293
+%      ||e_I||: 72.7 -> 2.5 grey RMS   a factor of 29.1 in the norm,
+%                                      hence 846 in the square
+%  1293 against 846. Three possible explanations, and you can tell which in
+%  one look at the log:
+%    (i)  the 72.7 and 2.5 figures are from a different variant than the
+%         lambda figures, in which case say which variant each belongs to;
+%    (ii) N_e is the count of RETAINED measurements and varies over the run,
+%         in which case lambda is not proportional to ||e_I||^2 and the
+%         sentence "the gain is proportional to the intensity error" needs
+%         qualifying;
+%    (iii) one of the four numbers is a transcription slip.
+%  Note that mu passes the same test: 29.1^10 = 4e14 against the quoted
+%  1.9e-2/5.3e-18 = 3.6e15, which agrees to within the rounding of a
+%  two-significant-figure quotation. So the mu sentence is sound and it is
+%  specifically the lambda pair that needs checking.
+%
+%  WHAT I VERIFIED AND FOUND CORRECT
+%  - All eight norms in Table 4.x, recomputed from their components. Every
+%    one agrees to the last digit printed.
+%  - The initial intensity error as a consistency check on the RMS:
+%    sqrt(4.06e8 / 76800) = 72.7 grey levels, exactly the figure quoted in
+%    the text. That is a good sign and worth keeping, since it ties two
+%    independently reported numbers together.
+%  - "more than three orders of magnitude below the floor" for the 10^4
+%    threshold: 4.35e7/1e4 = 4350, so 3.6 orders. Correct.
+%  - "falls by three and a half orders of magnitude": 1149^2 x 264000
+%    = 3.5e11 down to 6.5e7 is a factor of 5400, i.e. 3.7 orders. Correct.
+%
+%  LABELS USED ABOVE
+%    sec:test-configurations       4.6.3
+%    sec:ablation-conditions       4.6.2
+%    sec:metrics                   4.6.4
+%    sec:tukey-limitation          4.3.3
+%    sec:hermite-weight-limitation 4.4.4
+%    sec:robust-stability          4.5
+%    sec:occlusion                 4.7.2
+%    sec:future                    future work
+%    eq:hessian-floor              the floor added to 4.2.2
+%
+%  AND THE ONE LABEL STILL TO SETTLE: my correction to 4.5 refers to this
+%  section as sec:results. You have labelled it sec:ablation-results. Change
+%  the reference in 4.5 -- yours is the one in the thesis.
+%
+%  \begin{figure}[H] needs \usepackage{float} in the preamble.
+% ======================================================================
