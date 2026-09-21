@@ -1,0 +1,132 @@
+% ======================================================================
+%  Section 4.4.4 --- Acknowledged limitation.  Corrected and extended.
+%
+%  The three paragraphs you have are sound and the asymmetry-of-errors
+%  argument is the right defence. Two changes and two additions.
+%
+%  1. STRENGTHENING. "its rows in L_R are small" is asserted. After the
+%     addition to 4.4.1 it is a consequence: the row norm factorises into
+%     the local gradient magnitude and a geometric term, and G is a
+%     scale-aggregated gradient magnitude. The section's whole defence
+%     rests on this step, so it should cite the place where it is proved
+%     rather than restate it as an expectation.
+%
+%  2. THIS SUBSECTION IS WHERE 4.4.2 SENDS THE READER for the ablation of
+%     the measure -- "Section X records what happens when it is used" --
+%     and it does not record it. The paragraph is added below.
+%
+%  3. A SECOND LIMITATION IS MISSING, and it is one the chapter measures.
+%     Section 4.3.3 identifies the early rejection of valid measurements as
+%     the defect of a structure-blind estimator; 4.4 proposes the remedy;
+%     and 4.7.3 then reports 13.6% of valid measurements strongly
+%     down-weighted at iteration 1 with the remedy active. A limitation the
+%     chapter's own results demonstrate belongs in the section that
+%     acknowledges limitations, not left for a reader to notice.
+%
+%  4. TITLE. With three limitations the singular no longer fits, and 4.4.3
+%     refers to this subsection as where "the scope of the method is
+%     discussed". "Scope and limitations" matches both.
+% ======================================================================
+
+\subsection{Scope and limitations}
+\label{sec:hermite-weight-limitation}
+
+The structure measure~\eqref{eq:structG} reports that the image is locally
+flat, not why it is flat. It therefore cannot distinguish a region that is
+flat because it is occluded from one that is flat because the scene itself is
+untextured there, and both are down-weighted alike. A genuinely untextured but
+visible region will thus be suppressed even though its measurements are valid.
+
+This behaviour is accepted, and is arguably appropriate rather than merely
+tolerable. A region devoid of Hermite structure constrains the camera pose
+only weakly, whatever the cause of its flatness. This is not an expectation
+but a consequence of the factorisation established in
+Section~\ref{sec:hermite-principle}: the norm of a row of $\mathbf{L}_{R}$ is
+the product of the local gradient magnitude and a term depending only on the
+image coordinates and the depth, and $G$ is a scale-aggregated gradient
+magnitude, so a small $G$ entails small rows and a correspondingly slight
+contribution to the descent direction. Down-weighting such a region therefore
+discards little information in the case where the flatness is genuine, while
+removing a substantial source of bias in the case where it is not. The
+asymmetry of the two errors favours the rejection.
+%%% (1) The cross-reference does the work that the sentence "its rows in
+%%% L_R are small" previously did on its own.
+
+%%% (2) The ablation 4.4.2 promises. Note the standard applied: a single
+%%% run per variant is not grounds for preferring one on its final error,
+%%% which is exactly the position 4.7.1 takes about the three variants.
+%%% Applying it here too is what keeps the chapter consistent.
+\paragraph{Ablation of the measure.}
+An earlier formulation of~\eqref{eq:structG} used the summed Hermite
+responses directly. Because those kernels carry a DC component --- their gain
+at zero frequency equals their $L_{1}$ norm to three decimal places --- the
+resulting measure reported local intensity rather than local structure, as
+Figure~\ref{fig:structure-maps} shows and as the statistics quoted in
+Section~\ref{sec:hermite-gate} quantify. That formulation attained the
+smaller final error on the nominal run, $0.088^{\circ}$ against
+$0.385^{\circ}$ in rotation. It is nevertheless not the measure adopted here,
+for two reasons that do not depend on that comparison. The first is that the
+argument of the preceding paragraph fails for it: a local average of the
+intensity bears no relation to the norm of a row of $\mathbf{L}_{R}$, so the
+weighting would down-weight dark regions rather than uninformative ones, and
+would behave differently on a scene in which brightness and texture were
+uncorrelated. The second is that it does not recover the identity when there
+is nothing to reject: at convergence on a clean target it still rejects
+$1.3\%$ of measurements and holds $8.7\%$ below a quarter weight, against
+$0.3\%$ and $3.2\%$ for the measure adopted, because brightness does not
+change as the pose converges. As to the difference in final error, a single
+run of each variant is not a basis on which to prefer one, for the reason
+given in Section~\ref{sec:nominal}; the choice rests on the two properties
+above.
+
+%%% (3) The limitation the results demonstrate.
+\paragraph{The early rejection of valid measurements is not removed.}
+Section~\ref{sec:tukey-limitation} identifies the systematic rejection of
+valid measurements early in the servo as the characteristic defect of a
+structure-blind estimator, and the weighting developed here is intended to
+address it. It does not eliminate it. Section~\ref{sec:weight-maps} reports
+that on an unoccluded target, with the structure normalisation active,
+$13.6\%$ of measurements still carry a weight below a quarter at the first
+iteration and $3.5\%$ are rejected outright, every one of them valid. The
+normalisation rescales the residuals relative to one another, but while the
+pose error is large the residual is large almost everywhere and the
+distribution remains far from the one the estimator presumes. Whether the
+normalisation reduces this over-rejection relative to a purely residual-based
+estimator is not established here, no weight map having been recorded for
+Variant~2, and is identified as an open point in
+Section~\ref{sec:future}.
+%%% This is the honest form. We can say the gate does not remove the
+%%% problem, because Table 4.3 measures Variant 3. We cannot say it fails
+%%% to improve on Variant 2, because Variant 2's map was never produced.
+%%% If you run it, this paragraph gets a number and becomes a result.
+
+It should nonetheless be recorded that the first of these limitations is a
+real restriction of the method, and that a scene consisting predominantly of
+untextured surfaces would defeat it, as it would defeat any scheme that
+identifies unreliable measurements by their lack of local structure.
+
+% ======================================================================
+%  CHECK FOR REPETITION WITH 4.4.3
+%  The corrected 4.4.3 now ends by saying that uniformity and not brightness
+%  produces the vanishing response, and that a textured occluder would not
+%  be suppressed. The first paragraph here says the measure cannot tell why
+%  a region is flat. These are complementary, not duplicated -- 4.4.3 is
+%  about bright versus dark, this is about occluded versus untextured -- but
+%  read the two together once to be sure the transition does not repeat the
+%  word "uniform" three times in four sentences.
+%
+%  LABELS USED ABOVE
+%    sec:hermite-principle   4.4.1
+%    sec:hermite-gate        4.4.2
+%    sec:tukey-limitation    4.3.3
+%    sec:nominal             4.7.1
+%    sec:weight-maps         4.7.3
+%    sec:future              future work
+%    fig:structure-maps      Figure 4.1
+%
+%  IF YOU WOULD RATHER NOT CARRY THE SECOND ADDITION HERE, the alternative
+%  is to state it in 4.7.3, where the measurement is. I recommend here: a
+%  limitation stated in the methods section and then measured reads as
+%  candour, whereas the same limitation appearing only in the results reads
+%  as something the author discovered late.
+% ======================================================================
