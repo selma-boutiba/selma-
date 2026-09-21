@@ -1,0 +1,477 @@
+% ======================================================================
+%  Section 4.7.2 --- Convergence under occlusion.  WRITTEN.
+%
+%  Read this header before the LaTeX. Three things have to be said before
+%  you paste it, and one of them changes what the chapter can claim.
+%
+%  --------------------------------------------------------------------
+%  1. THE TABLE'S UNITS ARE WRONG IN EVERY ROW, AND IN THREE DIFFERENT
+%     WAYS. I recomputed all of it from the components.
+%
+%     Header says mm and degrees. In fact:
+%       - the three variant rows are in METRES and RADIANS.
+%           none    : |dt| = 1.291e-3   -> 1.291 mm  = 1291 um
+%                     |dw| = 2.959e-2   -> 1.6954 deg
+%           Tukey   : |dt| = 2.905e-6 m = 2.905 um
+%                     |dw| = 2.862e-4 rad = 0.01640 deg
+%           Hermite : |dt| = 3.130e-6 m = 3.130 um
+%                     |dw| = 2.651e-4 rad = 0.01519 deg
+%         These agree with the console values you reported (1291 um /
+%         1.6953 deg, 2.91 um / 0.0164 deg, 3.12 um / 0.0152 deg), so the
+%         NUMBERS are right and only the column headings are wrong.
+%       - the "initial" row is in DECIMETRES: 0.4, -0.4, 11 is
+%         (40, -40, 1100) mm.
+%       - the "desired" row is in METRES: 1.3 is 1300 mm.
+%       So two adjacent rows of the same column carry units differing by a
+%       factor of ten, under a heading that names a third unit.
+%
+%     Left uncorrected this is the single most damaging error in the
+%     chapter: an examiner who reads the heading will see the unweighted
+%     scheme positioning to 1.3 MICROmetres and the whole comparison
+%     collapses into noise.
+%
+%     Also: the caption says "initial pose error" and the row gives the
+%     initial POSE. And "Pose" heads a column whose entries are two poses
+%     followed by three variant names.
+%
+%     Fixed below: one table, final errors only, translations in
+%     micrometres and rotations in degrees throughout, norms included as
+%     in Table~\ref{tab:ch4-nominal}, poses moved to the caption.
+%
+%  --------------------------------------------------------------------
+%  2. THE TWO TABLES CANNOT BE COMPARED, AND THE REASON IS WORTH A
+%     PARAGRAPH RATHER THAN A FOOTNOTE.
+%
+%     Nominal : Variant 3 reaches 0.999 mm and 0.385 deg.
+%     Occluded: Variant 3 reaches 0.0031 mm and 0.0152 deg.
+%
+%     The occluded run is some three hundred times the more accurate. No
+%     examiner will let that pass, and "our method does better with an
+%     occluder than without one" is not a defensible sentence. It needs an
+%     explanation, and there is a good one, which also explains why
+%     Variant 1 fails in the way it does. See the paragraph "A remark on
+%     the two configurations" below, and item 4 for the check that
+%     confirms it.
+%
+%  --------------------------------------------------------------------
+%  3. WHAT THIS EXPERIMENT DOES AND DOES NOT ESTABLISH.
+%
+%     Variant 2: 2.905 um, 0.01640 deg
+%     Variant 3: 3.130 um, 0.01519 deg
+%     Variant 3 is 7.7 per cent WORSE in translation and 7.4 per cent
+%     BETTER in rotation, on one run each. That is a tie, and 4.6.1 says
+%     the claim of the chapter rests on this comparison.
+%
+%     So the honest reading, which I have written into the section, is:
+%       (i)   robust weighting is decisive against occlusion -- two orders
+%             of magnitude over the baseline, and that IS a result;
+%       (ii)  the Hermite-informed measure attains the same accuracy as
+%             generic Tukey weighting by a different route;
+%       (iii) this experiment does NOT show it to be more accurate, and
+%             the section says so in those words.
+%     A negative result stated plainly is worth more to you in a viva than
+%     a 7 per cent difference presented as an advantage. And it is not a
+%     weak position: (i) alone justifies the chapter, and the contribution
+%     of Variant 3 then rests on the formulation and on the mechanism that
+%     4.7.3 shows, which is where it belongs.
+%
+%     You should also know what is NOT available to defend Variant 3: the
+%     weight map for Variant 2 was never recorded, so you cannot argue
+%     that Variant 3 rejects a more targeted set of measurements either.
+%     4.4.4 already flags this. It is one run, and it is the single
+%     highest-value experiment still outstanding.
+%
+%  --------------------------------------------------------------------
+%  4. NUMBERS MARKED  <-- CONFIRM  IN THE TEXT. Four of them.
+%     - the final ||e||^2 for Variant 2 (I have 1.551e10 for Variant 1 and
+%       1.573e10 for Variant 3, and the argument needs all three);
+%     - that the reported ||e||^2 is the UNWEIGHTED residual for all three
+%       variants, otherwise the comparison in that paragraph is invalid;
+%     - lambda at iteration 600 in both configurations, which is the check
+%       on the explanation of item 2 -- one cout in the loop;
+%     - that lambda is computed from the raw intensity error and not from
+%       the weighted one, which the explanation requires.
+% ======================================================================
+
+\subsection{Convergence under occlusion}
+\label{sec:occlusion}
+%%% Referenced from 4.6.4 and from the corrected 4.7.1.
+
+The three variants are now compared on the occluded target. This is the
+configuration for which the weighting was introduced, and the one in which the
+three schemes are expected to separate. The reference image is acquired from
+the unoccluded target, while the images acquired during servoing carry the
+opaque elliptical region described in
+Section~\ref{sec:test-configurations}, so that every measurement falling
+inside it is in error and the error is systematic rather than random: the
+occluder does not add noise to the cost, it displaces the pose at which the
+cost is least. The poses, the filter bank, the gain schedule and the iteration
+cap are unchanged from Section~\ref{sec:nominal}, and the occluder covers
+$7.4\%$ of the measurements at the initial pose and $5.80\%$ at the desired
+pose, the difference following from the retreat in depth between them.
+
+\begin{figure}[H]
+    \centering
+
+    % First row: 3 images
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/C/fig1_a.PNG}
+
+        \vspace{1mm}
+        \textbf{(a)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/actual.PNG}
+
+        \vspace{1mm}
+        \textbf{(b)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/initiialerrur.PNG}
+
+        \vspace{1mm}
+        \textbf{(c)}
+    \end{minipage}
+
+    \vspace{5mm}
+
+    % Second row: 2 images
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/V1.PNG}
+
+        \vspace{1mm}
+        \textbf{(d)}
+    \end{minipage}
+    \hspace{0.05\textwidth}
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/V2V3.PNG}
+
+        \vspace{1mm}
+        \textbf{(e)}
+    \end{minipage}
+
+    \caption{Occlusion case, experimental setup: (a)~desired image
+    $\mathbf{I}^{*}$, acquired from the unoccluded target; (b)~current image
+    $\mathbf{I}$ at the initial pose, showing the occluder; (c)~initial image
+    error $\mathbf{I}-\mathbf{I}^{*}$; (d)~final image error, Variant~1;
+    (e)~final image error, Variant~3, that of Variant~2 being visually
+    indistinguishable from it. In~(d) the residual extends over the whole
+    image, the camera having settled at a pose displaced from the desired
+    one; in~(e) it is confined to the occluder, which no scheme can remove
+    because the reference contains no counterpart to it.}
+    \label{fig:occ_setup}
+    %%% Your \label{} was empty. Panel (e) was captioned "V2 and V3"; one
+    %%% image cannot be two runs, so it is named as Variant 3 with the
+    %%% equivalence stated. If the file is in fact Variant 2, swap the two
+    %%% names. The two closing clauses are the point of the figure and were
+    %%% not being made: (d) and (e) differ in WHERE the residual lies, not
+    %%% in how much of it there is.
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/camV12.PNG}
+
+        \vspace{1mm}
+        \textbf{(a)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/posV12.PNG}
+
+        \vspace{1mm}
+        \textbf{(b)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/errurV12.PNG}
+
+        \vspace{1mm}
+        \textbf{(c)}
+    \end{minipage}
+
+   \caption{Occlusion case, Variant~1 (no weighting, $\mathbf{D}=\mathbf{I}$):
+   (a)~camera velocities; (b)~translational and rotational positioning errors;
+   (c)~feature error $\lVert\mathbf{e}\rVert^{2}$.}
+
+   \label{fig:occ_v1}
+
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/camV22.PNG}
+
+        \vspace{1mm}
+        \textbf{(a)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/posV22.PNG}
+
+        \vspace{1mm}
+        \textbf{(b)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/errurV22.PNG}
+
+        \vspace{1mm}
+        \textbf{(c)}
+    \end{minipage}
+
+   \caption{Occlusion case, Variant~2 (Tukey weighting): (a)~camera
+   velocities; (b)~translational and rotational positioning errors;
+   (c)~feature error $\lVert\mathbf{e}\rVert^{2}$.}
+
+   \label{fig:occ_v2}
+
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/camV32.PNG}
+
+        \vspace{1mm}
+        \textbf{(a)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/posV32.PNG}
+
+        \vspace{1mm}
+        \textbf{(b)}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.30\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Figs/D/errurV32.PNG}
+
+        \vspace{1mm}
+        \textbf{(c)}
+    \end{minipage}
+
+   \caption{Occlusion case, Variant~3 (Hermite-informed weighting):
+   (a)~camera velocities; (b)~translational and rotational positioning errors;
+   (c)~feature error $\lVert\mathbf{e}\rVert^{2}$.}
+
+   \label{fig:occ_v3}
+
+\end{figure}
+%%% All three captions said "feature-error norm ||e||", as in 4.7.1. The
+%%% plots and the text are of ||e||^2.
+
+\paragraph{Results:}
+Figures~\ref{fig:occ_v1}--\ref{fig:occ_v3} show the camera velocities, the
+positioning error and the feature error against iteration, and
+Table~\ref{tab:Occlusion_pose} collects the final pose errors. All three runs
+converge in the sense of Section~\ref{sec:metrics}, and none diverges or
+oscillates; the separation between them is entirely a separation in accuracy.
+
+The separation is large. The unweighted scheme settles $1291\,\mu\mathrm{m}$
+and $1.695^{\circ}$ from the desired pose, against $2.9\,\mu\mathrm{m}$ and
+$0.016^{\circ}$ for Tukey weighting and $3.1\,\mu\mathrm{m}$ and
+$0.015^{\circ}$ for the Hermite-informed weighting: a factor of some $440$ in
+translation and $110$ in rotation between the baseline and either weighted
+variant. Under occlusion, and in contrast to the nominal case of
+Section~\ref{sec:nominal}, the cost of weighting a clean scene is repaid many
+times over. The contribution of robust weighting to a direct scheme is
+therefore not marginal but decisive, and this is the principal quantitative
+result of the chapter.
+
+\paragraph{The unweighted scheme minimises a displaced cost.}
+The manner of the baseline's failure is more instructive than its magnitude,
+and it is the clearest demonstration in this thesis of why a direct scheme
+requires robustification. Variant~1 does not fail to converge, nor does it
+come to rest at a higher value of the cost than the weighted variants. It
+attains the \emph{smallest} final feature error of the three,
+$1.551\times10^{10}$ against $1.573\times10^{10}$ for Variant~3,
+%%% <-- CONFIRM, and add Variant 2's value; the sentence needs all three
+%%% and I have only two. Also confirm that the quantity printed is the
+%%% UNWEIGHTED residual in all three runs -- if the weighted residual is
+%%% printed for Variants 2 and 3 the comparison is between different
+%%% quantities and this paragraph must be deleted.
+while its pose error is larger by a factor of four hundred. The occluded
+measurements have not raised the cost at the correct pose; they have moved the
+pose at which the cost is least. Variant~1 finds that minimum accurately and
+it is the wrong one. Two consequences follow. The first is practical: no
+criterion computed from the same corrupted measurements that drive the
+control can detect this failure, which is the argument of
+Section~\ref{sec:metrics} met as a measurement. The second is that the
+comparison vindicates the formulation of the problem in
+Section~\ref{sec:robust-framework} as one of estimation rather than of
+optimisation: the difficulty is not that the cost is hard to minimise but that
+minimising it is the wrong thing to do.
+
+\paragraph{The two weighted variants are not separated by this experiment.}
+Variants~2 and~3 differ by $7.7\%$ in translation, in favour of Variant~2, and
+by $7.4\%$ in rotation, in favour of Variant~3. The two differences are of the
+same size and point in opposite directions, and each rests on a single run from
+a single initial pose. By the standard adopted in Section~\ref{sec:nominal},
+which declined to rank the three variants on differences of a few tenths of a
+degree, this is a tie, and it is reported as one. The structure-informed
+weighting is not shown by this experiment to position more accurately than
+generic Tukey weighting under occlusion.
+%%% This is the sentence you will be asked about in the viva. Having it in
+%%% your own text, in your own words, is a far better position than having
+%%% it put to you.
+
+What the experiment does show is that the two reach the same accuracy by
+different routes, and the route matters for the reason given in
+Section~\ref{sec:hermite-weight-limitation}: the structure-normalised weighting
+suppresses measurements because they carry no usable image structure, whereas
+the residual-based weighting suppresses them because they disagree with the
+model, and only the first of these is a property of the image rather than of
+the current pose estimate. Section~\ref{sec:weight-maps} examines the two
+mechanisms directly. A stronger claim than parity would require, at a minimum,
+the study over several initial poses identified in Section~\ref{sec:future},
+and a weight map for Variant~2, which was not recorded.
+
+\paragraph{A remark on the two configurations.}
+The final errors of Table~\ref{tab:Occlusion_pose} are some two to three orders
+of magnitude smaller than those of Table~\ref{tab:ch4-nominal}, and the two
+tables must not be read as though the occluded runs were the more accurate in
+any useful sense. The explanation lies in the adaptive gain, and it is the same
+mechanism identified in Section~\ref{sec:nominal}. There the run was found to
+stall not because the residual had been minimised but because the gain decayed
+with it: $\lambda\propto\norm{\mathbf{e}_I}^{2}$ by~\eqref{eq:lambda}, and the
+commanded velocity is proportional to the residual in addition, so
+$\norm{\mathbf{V}_c}$ falls roughly as the cube of the error and the servo
+stalls while a small misalignment remains. Under occlusion the intensity error
+does not decay to zero: the reference contains no counterpart to the occluder,
+so a residual of fixed magnitude persists over some six per cent of the image
+however well the camera is positioned. The gain is computed from that intensity
+error and is therefore held up by it,
+%%% <-- CONFIRM that lambda is computed from the raw intensity error and
+%%% not from the weighted one. The whole paragraph rests on it, and it is
+%%% one line of the implementation.
+while the weighting removes the same measurements from the descent direction.
+The servo consequently continues to drive on the valid measurements at an
+undiminished gain, the cubic collapse of the nominal case is replaced by a
+velocity proportional to the error alone, and the run converges geometrically
+until it meets the limits of the simulation rather than the limits of the gain
+schedule.
+
+Three observations follow, and together they account for the whole of
+Table~\ref{tab:Occlusion_pose}. First, the micrometre accuracies are a property
+of the gain schedule under a persistent residual and not evidence that
+occlusion assists convergence; the comparison that matters is between the three
+variants of this table, all of which were run under identical conditions, and
+not between the two tables. Second, the same mechanism explains why Variant~1
+fails as sharply as it does rather than merely drifting: it too enjoys the
+sustained gain, and it uses it to converge efficiently upon the displaced
+minimum. Third, the observation suggests that the stall reported in
+Section~\ref{sec:nominal} is a limitation of the gain schedule inherited from
+the implementation rather than of the weighting or of the features, since
+removing the decay of $\lambda$ --- by whatever means --- improved the final
+accuracy by three orders of magnitude. A gain schedule that does not vanish
+with the error is accordingly identified in Section~\ref{sec:future} as the
+most immediate improvement available to the scheme.
+%%% This last point turns an awkwardness into a contribution, and it is
+%%% honestly arrived at: the occluded runs are an accidental experiment on
+%%% the gain schedule, and they say something useful about it. Keep it.
+%%% THE CHECK: print lambda at iteration 600 in both configurations. If it
+%%% is of order 0.04 in the nominal run and one or two orders larger in the
+%%% occluded run, the paragraph is confirmed and you can quote the two
+%%% values in it. If it is not, delete the paragraph and tell me the
+%%% numbers, because then something else is responsible and we need to find
+%%% out what before this section can be defended.
+
+\begin{table}[H]
+    \centering
+    \caption{Occlusion case: final positioning error at iteration~600 for the
+    three weighting variants, relative to the desired pose
+    $\mathbf{t}^{*}=(0,0,1300)\,\mathrm{mm}$,
+    $\boldsymbol{\omega}^{*}=(0,0,0)^{\circ}$, from the initial pose
+    $\mathbf{t}_{0}=(40,-40,1100)\,\mathrm{mm}$,
+    $\boldsymbol{\omega}_{0}=(12,-12,6)^{\circ}$. Translations in
+    micrometres, rotations in degrees. The occluder covers $5.80\%$ of the
+    measurements at the desired pose. One run per variant.}
+  \label{tab:Occlusion_pose}
+    \small
+    \begin{tabular}{@{}lrrrrrrrr@{}}
+        \toprule
+        & \multicolumn{3}{c}{Translation ($\mu$m)}
+        & \multicolumn{3}{c}{Rotation (deg)}
+        & \multicolumn{2}{c}{Norm} \\
+        \cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-9}
+        Variant & $\Delta T_x$ & $\Delta T_y$ & $\Delta T_z$
+                & $\Delta\omega_x$ & $\Delta\omega_y$ & $\Delta\omega_z$
+                & $\norm{\Delta\mathbf{t}}$ ($\mu$m)
+                & $\norm{\Delta\boldsymbol{\omega}}$ (deg) \\
+        \midrule
+        1 --- none    & $675$    & $30.7$  & $-1100$  & $-0.2355$  & $-1.6788$  & $-0.0196$   & $1291$  & $1.6954$ \\
+        2 --- Tukey   & $0.0539$ & $2.18$  & $-1.92$  & $+0.01495$ & $+0.00670$ & $-0.000563$ & $2.905$ & $0.01640$ \\
+        3 --- Hermite & $1.82$   & $1.75$  & $-1.85$  & $+0.01455$ & $+0.00431$ & $-0.000474$ & $3.130$ & $0.01519$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+% ======================================================================
+%  HOW THE TABLE WAS CONVERTED, so you can check me.
+%
+%  Translations: your entries were in metres. x 1e6 gives micrometres.
+%      none   : 6.75e-4 m -> 675 um ; 3.07e-5 -> 30.7 ; -1.10e-3 -> -1100
+%      Tukey  : 5.39e-8   -> 0.0539 ; 2.18e-6 -> 2.18 ; -1.92e-6 -> -1.92
+%      Hermite: 1.82e-6   -> 1.82   ; 1.75e-6 -> 1.75 ; -1.85e-6 -> -1.85
+%  Rotations: your entries were in radians. x 180/pi gives degrees.
+%      none   : -4.11e-3 -> -0.2355 ; -2.93e-2 -> -1.6788 ; -3.42e-4 -> -0.0196
+%      Tukey  :  2.61e-4 ->  0.01495;  1.17e-4 ->  0.00670; -9.82e-6 -> -0.000563
+%      Hermite:  2.54e-4 ->  0.01455;  7.53e-5 ->  0.00431; -8.28e-6 -> -0.000474
+%  Norms, recomputed from the converted components:
+%      none   : 1291.0 um , 1.6954 deg   (console: 1291 um , 1.6953 deg)
+%      Tukey  : 2.905 um  , 0.01640 deg  (console: 2.91 um  , 0.0164 deg)
+%      Hermite: 3.130 um  , 0.01519 deg  (console: 3.12 um  , 0.0152 deg)
+%  Every norm reproduces the console to the digits printed, which is the
+%  check that the conversion is right and the original numbers are sound.
+%  The Hermite translation norm comes out 3.130 against your console's
+%  3.12; that is rounding in the third component, not an error.
+%
+%  THE POSE ROWS were dropped. They belonged to a different quantity from
+%  the rest of the table -- absolute poses against final errors -- and they
+%  carried two further unit systems. They are now in the caption and in
+%  4.6.3. If you want them back as rows, they need their own unit heading
+%  and a rule separating them, or the same confusion returns.
+%
+%  ONE ASYMMETRY WORTH NOTICING, not written into the text because a single
+%  run will not support it: Variant 2's translational error is dominated by
+%  Delta T_y and Delta T_z with Delta T_x three orders smaller, whereas
+%  Variant 3's three components are all of the same size, about 1.8 um
+%  each. An isotropic residual error is what one expects when nothing
+%  systematic remains; a strongly anisotropic one can indicate a direction
+%  that the weighting has left partly unconstrained. It is suggestive and
+%  no more, and it would take the multi-pose study to make anything of it.
+%  I mention it in case you want a line of enquiry for Chapter 5.
+%
+%  LABELS USED ABOVE
+%    sec:test-configurations       4.6.3
+%    sec:metrics                   4.6.4
+%    sec:nominal                   4.7.1
+%    sec:weight-maps               4.7.3
+%    sec:robust-framework          4.2
+%    sec:hermite-weight-limitation 4.4.4
+%    sec:future                    future work
+%    tab:ch4-nominal               Table of 4.7.1
+%    eq:lambda                     the adaptive gain
+% ======================================================================
