@@ -1,0 +1,170 @@
+% ======================================================================
+%  Section 4.4.3 --- The Hermite-informed weight.  Corrected.
+%
+%  THREE SUBSTANTIVE PROBLEMS.
+%
+%  A. EQUATION (4.11) NORMALISES BY THE WRONG COUNT. It divides by P, the
+%     number of measurements. G is defined per image POSITION, and there
+%     are four measurements per position, so the mean must divide by the
+%     number of positions. The implementation agrees:
+%         double Gmean = sumG / nbIn;    // nbIn = 66000, not 264000
+%     As written the thesis mean is four times too small, hence Gbar four
+%     times too large, and the floor at 0.1 would bite quite differently.
+%     Fixed by introducing N for the number of positions.
+%
+%  B. "the occluded region is rendered as a uniform DARK area ... so its
+%     Hermite response energy falls well below the image average". With the
+%     DC-free measure of 4.4.2, darkness is irrelevant: G has exactly zero
+%     DC gain, so a uniform BRIGHT occluder gives the same vanishing
+%     response. Correcting this strengthens the section, because it leaves
+%     the textured occluder as the only case the mechanism misses -- which
+%     is exactly what 4.4.4 says.
+%
+%  C. "its measurements are among the FIRST to be rejected" contradicts
+%     4.7.3, which measures the opposite: at iteration 1 only 4.2% of
+%     measurements are rejected against 7.4% covered by the disc, so the
+%     occluder is not yet being rejected at all. It is rejected decisively
+%     at convergence, not early. The two sections cannot both stand.
+%
+%  Plus one addition that answers an obvious objection, and the usual
+%  labels and punctuation.
+% ======================================================================
+
+\subsection{The Hermite-informed weight}
+\label{sec:occlusion-mechanism}
+%%% 4.4.2 refers to this subsection for the vanishing-response property.
+
+The structure measure is used to normalise the residual before it is submitted
+to the robust estimator. It is first expressed relative to its mean over the
+image,
+%%% (A) N, not P. G lives on positions; P counts measurements, of which
+%%% there are four per position.
+\begin{equation}
+    \bar{G}(p)=\frac{G(p)}{\overline{G}},
+    \qquad
+    \overline{G}=\frac{1}{N}\sum_{p}G(p),
+    \label{eq:Gbar}
+\end{equation}
+where $N$ is the number of image positions carrying a measurement, so that
+$P=4N$ for the four-scale feature vector of Chapter~\ref{ch:herpvs}. The
+measure is thereby dimensionless and self-calibrating: it reports the
+structure at $p$ relative to the average structure of the current image, and
+is therefore insensitive to the overall texture level of the scene. The
+normalised ratio is floored,
+\begin{equation}
+    \bar{G}(p)\leftarrow\max\bigl(\bar{G}(p),\,\bar{G}_{\min}\bigr),
+    \qquad \bar{G}_{\min}=0.1,
+    \label{eq:Gfloor}
+\end{equation}
+and the structure-normalised residual is
+\begin{equation}
+    \tilde{e}_{j}=\frac{e_{j}}{\bar{G}(p_{j})},
+    \label{eq:normalized-residual}
+\end{equation}
+where $p_{j}$ is the image position of the $j$-th measurement, so that the
+four measurements taken at a given position share a single scale factor.
+
+The floor bounds the inflation applied to any residual at
+$1/\bar{G}_{\min}=10$, so that a measurement in a structureless region is
+penalised strongly but not without limit: such a measurement is rejected if
+its residual remains large after a bounded rescaling, not unconditionally.
+%%% Sharpened. "caps the rejection strength" suggested the floor prevents
+%%% rejection, which it does not; it prevents rejection from becoming
+%%% automatic.
+This bound also matters for the rank condition of
+Section~\ref{sec:weighted-law}: an unbounded inflation would drive every
+exactly flat position to zero weight, and a sufficiently untextured scene
+could then remove a direction of $\mathbf{H}_{\mathbf{D}}$ altogether.
+%%% Reference was sec:robust-framework, the whole of 4.2; the rank
+%%% condition and the floor that guards it are in 4.2.2.
+
+The weights are then obtained by applying the Tukey function~\eqref{eq:tukey}
+to the structure-normalised residuals,
+\begin{equation}
+    w^{\mathrm{H}}_{j}=w^{\mathrm{T}}\!\left(\frac{\tilde{e}_{j}}{\hat{s}_{\tilde{e}}}\right),
+    \qquad
+    \hat{s}_{\tilde{e}}=1.4826\operatorname{med}_{j}
+    \bigl\lvert\tilde{e}_{j}-\operatorname{med}_{k}(\tilde{e}_{k})\bigr\rvert,
+    \label{eq:hermite-weights}
+\end{equation}
+and assembled into
+$\mathbf{D}^{\mathrm{H}}=\mathrm{diag}(w^{\mathrm{H}}_{1},\dots,w^{\mathrm{H}}_{P})$.
+Here $\hat{s}_{\tilde{e}}$ is the robust scale of the
+\emph{structure-normalised} residuals, computed as in
+Section~\ref{sec:mad} but on $\tilde{e}_{j}$ rather than on $e_{j}$; the
+normalisation therefore precedes the scale estimation, and the two variants
+differ in the argument supplied to the estimator rather than in the estimator
+itself.
+
+%%% ADDED. This answers the first objection a reader will raise: if the
+%%% scale is re-estimated on the normalised residuals, does the
+%%% normalisation not simply cancel? The answer is instructive and takes
+%%% two sentences.
+That the scale is re-estimated on $\tilde{e}$ rather than carried over from
+$e$ has a consequence worth stating. Were $\bar{G}$ constant over the image,
+the normalisation would multiply every residual by the same factor, that
+factor would appear identically in $\hat{s}_{\tilde{e}}$, and the ratio
+$\tilde{e}_{j}/\hat{s}_{\tilde{e}}$ would be unchanged: a uniform rescaling is
+inert. What acts is therefore not the magnitude of the normalisation but its
+\emph{variation} across the image, which redistributes the residuals relative
+to their common scale and so changes which of them are extreme. The
+weighting is, in this sense, a reallocation of the outlier budget rather than
+a change in its size.
+
+The interpretation is a rescaling of the outlier threshold according to the
+local image content. Where the structure is stronger than the image average,
+$\bar{G}>1$, the normalised residual is reduced, and a measurement must depart
+substantially further from the model before it is rejected: large residuals
+are expected there and are treated as informative. Where the structure is
+weaker than average, $\bar{G}<1$, the normalised residual is inflated, and the
+measurement is rejected on comparatively slight evidence: little pose
+information is available there and the measurement is not worth defending. The
+estimator thus retains exactly the redescending behaviour of
+Section~\ref{sec:tukey-biweight}, but applies it to a residual that has been
+placed on a common footing across regions of differing image structure.
+%%% The double comma after "reduced,," is gone.
+
+%%% (B) and (C). "dark" removed; "among the first to be rejected" corrected
+%%% to what 4.7.3 measures.
+In the configurations considered here the occluded region is a uniform area of
+the target surface. Since $G$ is built from zero-mean kernels its response
+vanishes there whatever the intensity of that area, so $\bar{G}$ meets the
+floor~\eqref{eq:Gfloor}, the residual is inflated tenfold, and the
+measurement is rejected. It is the uniformity of the region and not its
+brightness that produces this: a uniform bright occluder would be suppressed
+identically. This is the mechanism by which the weighting acts on occlusion,
+and Section~\ref{sec:weight-maps} shows it operating. It should be said that
+the rejection is not immediate. While the pose error is large the residual is
+large over the whole image and the robust scale
+$\hat{s}_{\tilde{e}}$ is large in proportion, so the occluded measurements do
+not yet stand out; they are isolated as the pose converges and the scale
+falls, which Section~\ref{sec:weight-maps} measures. A strongly textured
+occluder, by contrast, would produce a large $G$ at every stage and would not
+be suppressed by this mechanism at all; the scope of the method is discussed
+in Section~\ref{sec:hermite-weight-limitation}.
+
+% ======================================================================
+%  LABELS: SETTLE 4.4.4 NOW. Three different labels for it are in play --
+%  sec:hermite-weight-limitation (yours, used above), sec:ablation-measure
+%  and sec:acknowledged (both mine, from earlier drafts of 4.4.2). Keep
+%  YOURS and change the reference in 4.4.2 to match. 4.4.4 will host both
+%  the acknowledged limitation and the ablation of the measure, so one
+%  label serves.
+%
+%  Other references corrected above:
+%    rank condition   sec:robust-framework -> sec:weighted-law   (4.2.2)
+%    robust scale     sec:tukey            -> sec:mad            (4.3.2)
+%    redescending     sec:tukey            -> sec:tukey-biweight (4.3.1)
+%
+%  NOTATION: D^H is the fourth weight matrix written with the same bold D
+%  used for the Gauss-Hermite kernels of 4.4.2. See the note in the 4.4.2
+%  correction; if you adopt W for the weight matrices, this becomes W^H.
+%
+%  CONSEQUENT EDIT ELSEWHERE
+%  4.4.4 currently opens "The structure measure (4.10) reports that the
+%  image is locally flat, not why it is flat." That is right and is now the
+%  natural continuation of the paragraph above. But its next sentence says
+%  a flat region is down-weighted "whatever the cause of its flatness",
+%  which is the same point as the brightness clarification here -- check
+%  that the two do not now repeat each other.
+% ======================================================================
