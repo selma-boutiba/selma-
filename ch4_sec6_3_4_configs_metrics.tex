@@ -1,0 +1,154 @@
+% ======================================================================
+%  Sections 4.6.3 and 4.6.4 --- Test configurations, and Metrics.
+%  KEEP THE METRICS SUBSECTION. It needs three corrections, one of them
+%  load-bearing for the whole chapter.
+%
+%  A. THE FAILURE DEFINITION DECLARES EVERY RUN A FAILURE.
+%     "a run being declared to have failed if the stopping threshold is
+%     not reached within the iteration cap." The threshold is
+%     ||e||^2 < 10^4; 4.7.1 reports the feature error settling three to
+%     four orders of magnitude above it; no run reaches it. This is the
+%     consequent edit promised in the 4.6.2 correction, and it cannot be
+%     left: as written, the protocol convicts its own results.
+%
+%  B. A METRIC THE CHAPTER NEVER REPORTS. "the number of iterations to
+%     convergence" is listed, then excused as secondary, and then never
+%     given anywhere in 4.7. This is the same defect as 4.3.2's promise to
+%     characterise the admissible occlusion fraction and 4.5's claim to
+%     monitor the conditioning -- both of which we removed. Removing this
+%     one keeps the chapter consistent with itself.
+%
+%  C. THE FEATURE ERROR IS LISTED AS A CRITERION, AND THE CHAPTER'S
+%     SHARPEST RESULT IS THAT IT IS NOT ONE.
+%     Under occlusion Variant 1 attains the SMALLEST final feature error
+%     of the three, 1.551e10 against 1.573e10 for Variant 3, while its
+%     pose error is some four hundred times larger, 1291 um against
+%     3.12 um. The feature error is exactly the quantity the occluder
+%     biases, so a reader who takes this subsection at its word and reads
+%     the ||e||^2 column of Table 4.x as a performance ranking will draw
+%     the reverse of the chapter's conclusion. The metric has to be kept
+%     -- it is the convergence evidence -- but its standing has to be
+%     declared here, where the metrics are declared.
+%
+%  D. NO \label. The corrected 4.6.2 refers to Section~\ref{sec:metrics}.
+%
+%  E. 4.6.3 was an empty heading. Drafted below from the run
+%     configuration. Check the three numbers marked  <-- CONFIRM.
+% ======================================================================
+
+\subsection{Test configurations}
+\label{sec:test-configurations}
+
+Two configurations are used, differing only in the target texture presented
+to the camera during servoing.
+
+In the \emph{nominal} configuration the reference image and the images
+acquired during servoing are both rendered from the same unoccluded texture.
+No measurement is corrupted, and the weighting has nothing to reject: the
+configuration tests whether the robust schemes preserve the accuracy of the
+baseline when robustness is not called for, which is the precondition for
+using them at all.
+
+In the \emph{occluded} configuration the reference image is rendered from the
+unoccluded texture while the images acquired during servoing are rendered
+from a copy of it carrying an opaque, untextured elliptical region. The
+occluder is painted into the target texture rather than introduced as a
+separate object, so it is planar with the target and its projection scales
+with the camera depth: it covers $7.4\%$ of the measurements at the initial
+pose and $5.80\%$ at the desired pose, the reduction following from the
+retreat in depth described below. Since the reference is taken from the clean
+texture, every measurement falling inside the occluder is in error, and the
+error is systematic rather than random --- which is what distinguishes this
+test from the addition of noise.
+
+The poses are identical in both configurations. The camera starts at
+\begin{equation*}
+    \mathbf{t}_{0}=(40,\,-40,\,1100)\,\mathrm{mm},
+    \qquad
+    \boldsymbol{\omega}_{0}=(12,\,-12,\,6)^{\circ},
+\end{equation*}
+and the desired pose is fronto-parallel to the target at
+\begin{equation*}
+    \mathbf{t}^{*}=(0,\,0,\,1300)\,\mathrm{mm},
+    \qquad
+    \boldsymbol{\omega}^{*}=(0,\,0,\,0)^{\circ} .
+\end{equation*}
+The displacement combines a lateral translation, a retreat in depth and a
+rotation about all three axes, and induces a mean image displacement of some
+$41$ pixels, reaching $65$ pixels in the corners of the field of view.
+%%% <-- CONFIRM these two pixel figures against your run log before
+%%% submission; the poses and the two occlusion percentages are measured.
+This is large enough that the linearisation underlying the interaction matrix
+is not valid at the outset, so the runs exercise the convergence behaviour of
+the schemes and not merely their behaviour near the solution. The iteration
+cap is $600$ in all runs.
+
+% ======================================================================
+
+\subsection{Metrics}
+\label{sec:metrics}
+%%% (D) added; 4.6.2 refers to this subsection.
+
+For each run the following are recorded: the evolution of the feature-error
+norm $\norm{\mathbf{e}}^{2}$ against iteration; the final translational and
+rotational pose errors; the adaptive gain and damping at convergence; and
+whether the run converged, a run being taken as converged once the commanded
+velocity falls below $10^{-3}\,\mathrm{m\,s^{-1}}$, for the reason given in
+Section~\ref{sec:ablation-conditions}.
+%%% (A) The failure definition is replaced by the criterion the chapter
+%%% actually uses. (B) "the number of iterations to convergence" is
+%%% removed: it is never reported in 4.7, and the sentence that excused it
+%%% as secondary goes with it.
+
+%%% (C) The standing of the feature error, declared where the metrics are
+%%% declared. This paragraph is the reason to keep the subsection.
+The final pose error is the primary criterion, and a word is needed on why it
+is the only one. The feature error is the quantity the control law minimises,
+and it is therefore a record of what the optimisation achieved rather than an
+independent measure of success: under occlusion it is precisely the quantity
+the corrupted measurements bias. Section~\ref{sec:occlusion} reports the
+unweighted scheme attaining the \emph{smallest} final feature error of the
+three variants while its pose error is larger by some two orders of
+magnitude, the corrupted measurements having displaced the minimum of the
+cost rather than raised its value there. The feature error is accordingly
+reported throughout as evidence that a run converged --- that it reached a
+minimum and settled --- and never as evidence of which minimum it reached.
+Only the pose error, which is available in simulation and is independent of
+the cost being minimised, can serve the latter purpose. This is a general
+property of direct visual servoing and not an artefact of the present
+configuration: any criterion computed from the same corrupted measurements
+that drive the control inherits their bias.
+
+In addition, the weight maps are recorded, that is, the weights $w_{j}$
+displayed at their image positions, together with the structure measure $G$
+displayed in the same way. These provide a direct qualitative check that the
+weighting is suppressing the intended measurements and that the measure is
+responding to structure rather than to intensity, and are reported alongside
+the quantitative results in Section~\ref{sec:weight-maps}.
+%%% Two changes. The structure maps are recorded too and are half of what
+%%% Figure 4.1 and 4.7.3 show, so the list should name them. And the
+%%% cross-reference is to 4.7.3 specifically, not to the whole of 4.7.
+
+% ======================================================================
+%  LABEL CLASH TO RESOLVE -- one line, but it will print "??" if missed.
+%  Your text here refers to Section~\ref{sec:ablation-results}. My
+%  correction to 4.5 refers to the same section as sec:results, and the
+%  corrections to 4.4.3, 4.4.4 and 4.6.2 refer to its subsections as
+%  sec:nominal (4.7.1), sec:occlusion (4.7.2) and sec:weight-maps (4.7.3).
+%  Decide which label 4.7 actually carries and make the two agree; I have
+%  used the subsection labels above because the references are to specific
+%  results, not to the results section as a whole.
+%
+%  ONE THING I DID NOT REMOVE
+%  "the adaptive gain and damping at convergence" is my addition, not
+%  yours. 4.7.1 reports mu falling to order 1e-18 and the corrected 4.5
+%  now rests its stability argument on that measurement. A quantity a
+%  later section leans on should be declared as recorded here.
+%
+%  IF YOU WANT ONE MORE METRIC, the cheapest with the largest return is
+%  the fraction of measurements carrying a weight below a quarter, per
+%  iteration. You already compute it for Table 4.3 at iterations 1 and
+%  600; logging it every iteration would turn the "rejection is not
+%  immediate" claim of 4.4.3 from an inference drawn from two samples
+%  into a curve. It is one accumulator in the loop.
+% ======================================================================
