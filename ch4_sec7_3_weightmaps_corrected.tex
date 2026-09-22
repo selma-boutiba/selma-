@@ -7,15 +7,10 @@
 %  that turns out to explain the nominal penalty of 4.7.1. Nine items.
 %
 %  --------------------------------------------------------------------
-%  A. FIRST, SOMETHING THAT CHANGES MY ADVICE ON 4.7.2.
-%     These maps are at iteration 600 of the OCCLUDED run. So that run
-%     does reach 600, and the consoles you sent me were simply a snapshot
-%     at 400. Do not rerun anything: scroll the occluded log to iteration
-%     600 and quote those pose values in Table~\ref{tab:Occlusion_pose}.
-%     That removes the mismatch with the nominal table at a stroke, and it
-%     also answers whether Variant 3's translation gap closes, since its
-%     commanded velocity at 400 was still twenty times the other two.
-%     Send me the three iteration-600 blocks and I will update 4.7.2.
+%  A. RESOLVED. These maps are at iteration 600 of the occluded run, and
+%     4.7.2 is now reported at iteration 600 as well, so the two sections
+%     describe the same instant and nothing needs reconciling. This item
+%     stands only as a record that it was checked.
 %
 %  --------------------------------------------------------------------
 %  B. "THE WEIGHTING HAS BECOME, TO WITHIN A THIRD OF A PERCENT, THE
@@ -170,9 +165,16 @@ contracts as they do, and the ratio $\tilde{e}_{j}/\hat{s}_{\tilde{e}}$ on
 which the Tukey function acts retains a comparable spread however small the
 residuals become. An M-estimator with an adaptive scale does not switch itself
 off when the data cease to contain outliers; it continues to discriminate
-among whatever residuals remain.
+among whatever residuals remain. An independent trace of the same fact is
+reported in Section~\ref{sec:occlusion}, where Variant~3 retains a commanded
+velocity thirty-four times that of Variant~2 after its pose has ceased to
+improve: the weights are still changing at iteration~$600$, which they could
+not be had the weighting settled to a constant matrix.
 %%% (B) This replaces "the weighting has become, to within a third of a
 %%% percent, the identity", which Table 4.3 contradicts on the same line.
+%%% The cross-reference to the terminal jitter is new: it is a second,
+%%% independent observation of the same thing, from a quantity logged for
+%%% a different purpose, and the two together make the point unarguable.
 
 The observation accounts for a result of Section~\ref{sec:nominal} that was
 there reported without explanation. On the clean scene the weighted variants
