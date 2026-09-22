@@ -1,0 +1,267 @@
+% ======================================================================
+%  Section 4.9 --- Future work.  WRITTEN.
+%  This is the sec:future that 4.4.4, 4.7.1, 4.7.2, 4.7.3 and 4.8 all
+%  refer to. Five dangling references resolve when you paste it.
+%
+%  WHERE TO PUT IT. All five references are from inside Chapter 4 and all
+%  five are about Chapter 4's own gaps, so it belongs at the end of
+%  Chapter 4, after the conclusion. If your thesis gathers all future work
+%  into the general conclusion instead, move the whole section there and
+%  KEEP THE LABEL sec:future -- the five references will still resolve,
+%  and only the printed section number changes.
+%
+%  HOW IT IS ORDERED. By value, not by topic, and the first item is worth
+%  more than the other eight together: the chapter measured a three-order-
+%  of-magnitude accuracy gain from a gain schedule that does not vanish,
+%  which is a larger effect than anything else in it. An examiner who
+%  reads only the first paragraph should come away with that.
+%
+%  ONE THING I DID NOT LIST. Monitoring the conditioning of H_D. Section
+%  4.5, as corrected, argues that the floor makes the rank condition
+%  non-binding by construction, so the measurement is not needed; listing
+%  it here as outstanding work would undercut that argument. I mention it
+%  only as an option, and only in the parenthesis where it belongs.
+%
+%  TWO ITEMS ARE MINE RATHER THAN YOURS, and you should decide whether you
+%  want them:
+%    - the reference-structure comparison in "Distinguishing occlusion
+%      from absent texture", which is a concrete research idea and not
+%      merely a gap to be filled. It follows directly from 4.4.4's
+%      acknowledged limitation and it is cheap. If you would rather the
+%      thesis not propose specific solutions, cut the second half of that
+%      paragraph and keep the statement of the problem.
+%    - the correlated-residuals paragraph, which names a theoretical
+%      misspecification in the estimator rather than an experiment. It is
+%      the kind of thing a sharp examiner raises, and having raised it
+%      yourself is better than being asked.
+% ======================================================================
+
+\section{Future work}
+\label{sec:future}
+
+Three kinds of work remain outstanding: measurements that the claims of this
+chapter require but do not yet have, an improvement that the experiments
+identified inadvertently, and extensions of the method itself. They are given
+below in order of the return expected from each.
+
+\paragraph{A gain schedule that does not vanish with the error.}
+This is the most valuable improvement the chapter identifies, and the evidence
+for it is already in hand. The adaptive gain~\eqref{eq:lambda} is proportional
+to the intensity error, and the commanded velocity is proportional to the
+residual in addition, so the velocity decays roughly as the cube of the error
+and the nominal runs stall while a sub-millimetre misalignment remains. The
+occluded runs, in which a fixed residual persists and the gain is consequently
+held some fifty-four times higher, reach the desired pose three orders of
+magnitude more closely. That comparison is confounded, in that the two
+configurations differ in more than the gain, but the mechanism is established
+independently: the gain and the damping are both driven by the intensity
+error, and the fifth-power relation between them is satisfied to within
+$0.62\%$ across all three runs. What is needed is a direct test. Three
+schedules are worth comparing on the nominal configuration, where the stall
+occurs: a floor on $\lambda$; a gain normalised by the current residual rather
+than proportional to it, so that the step length rather than the velocity is
+controlled; and a two-phase schedule that switches from the present law to a
+constant gain once the damping has collapsed. Each is a few lines of the
+implementation, and the chapter's own measurement suggests the return may be
+of the order of three orders of magnitude in final accuracy. It should be
+noted that decoupling the gain from the error in this way removes the
+mechanism by which the present scheme terminates, so a stopping criterion
+would have to be supplied in its place --- which the chapter should have had
+in any case, the inherited absolute threshold on $\norm{\mathbf{e}}^{2}$ never
+having been met in any run.
+
+\paragraph{A study over several initial poses.}
+This is the largest evidential gap. Every figure reported in
+Section~\ref{sec:ablation-results} rests on a single run from a single initial
+displacement, which is why no ordering of the three variants is asserted
+anywhere in the chapter. The two weighted variants differ by $28\%$ in
+translation in favour of the residual-based weighting and by $8\%$ in rotation
+in favour of the structure-informed one, and neither margin can be shown to be
+systematic on one run each. A study over a sample of initial poses --- varying
+the direction and magnitude of the displacement, and in particular the depth
+component, since Section~\ref{sec:nominal} finds the degradation concentrated
+there --- would allow the comparison to be reported as a distribution rather
+than as a pair of numbers, and would either establish the advantage claimed
+for the structural information or refute it. Nothing else in this list would
+change the standing of the chapter's central question as much.
+
+\paragraph{Measurements outstanding.}
+Three are cheap and each closes a specific gap. The first is a weight map for
+Variant~2 under the same conditions as those of
+Section~\ref{sec:weight-maps}: the chapter can state that the structure
+normalisation does not eliminate the early rejection of valid measurements,
+$13.6\%$ of them being held below a quarter weight at the first iteration, but
+it cannot state whether the normalisation reduces that figure relative to a
+purely residual-based estimator, no map having been recorded for the latter.
+One run supplies the comparison. The second is a proper measurement of the
+computational overhead of the weighting, the timings in the present logs being
+dominated by rendering and machine load to the point of reversing the
+algorithmic ordering; a clock placed around the weight computation alone, on
+an unloaded machine, would test the prediction of
+Section~\ref{sec:hermite-principle} that the six additional convolutions cost
+some twenty per cent over the twenty-eight the feature already requires. The
+third is the Frobenius norm of the iteration-to-iteration change in the
+weighting, $\lVert\mathbf{D}_{k}-\mathbf{D}_{k-1}\rVert_{F}$, logged against
+the iteration. Section~\ref{sec:robust-stability} assumes the weights vary
+slowly relative to the control and does not verify it; the terminal jitter
+reported in Section~\ref{sec:occlusion}, in which the structure-informed
+variant retains a commanded velocity thirty-four times that of the
+residual-based one after its pose has ceased to improve, suggests the
+assumption deserves checking. (The conditioning of
+$\mathbf{H}_{\mathbf{D}}$ could be logged at the same time, though
+Section~\ref{sec:robust-stability} argues that the floor
+of~\eqref{eq:hessian-floor} makes the rank condition non-binding by
+construction and the measurement therefore unnecessary.)
+
+\paragraph{Characterising the admissible occlusion fraction.}
+The chapter tests one occluder, of one shape, at one position, covering
+$5.80\%$ of the measurements at the desired pose. The robust framework of
+Section~\ref{sec:robust-framework} gives an M-estimator a finite breakdown
+point, so there exists a fraction of corrupted measurements beyond which each
+variant fails, and locating it is a well-posed experiment: sweep the occluder
+area from zero upward and record the fraction at which the final pose error
+departs from its unoccluded value. The result would be of direct practical
+use, since it is the quantity a practitioner needs in order to decide whether
+a given scene is within the method's competence, and it would test whether the
+structural information extends the admissible fraction --- which is a
+different and more tractable question than whether it improves the accuracy at
+a fixed fraction, and one on which the two weightings might well be
+distinguishable where the present experiment cannot distinguish them.
+
+\paragraph{Distinguishing occlusion from absent texture.}
+The structure measure reports that a region is locally flat, not why, and
+Section~\ref{sec:hermite-weight-limitation} accepts that a genuinely
+untextured but visible region is suppressed along with an occluded one. The
+reference image offers a way to separate the two cases that the present scheme
+does not use. The structure measure can be evaluated on the reference as well
+as on the current image, and the two compared at corresponding positions: a
+region flat in both is scene texture that is genuinely absent, whereas a
+region flat in the current image and structured in the reference is occluded.
+The comparison requires one additional evaluation of the measure, performed
+once on the reference and reused throughout, so the cost is negligible. Its
+limitation should be stated plainly: the two images are in spatial
+correspondence only as the pose converges, so the criterion is reliable in
+just the regime in which the present mechanism already works, and it would
+sharpen the discrimination rather than extend it to the early iterations. A
+textured occluder would defeat it as it defeats the present scheme, since such
+an occluder produces a large response in the current image and would be
+retained.
+
+\paragraph{Reducing the early over-rejection.}
+Section~\ref{sec:tukey-limitation} identifies the rejection of valid
+measurements while the pose error is large as the characteristic defect of a
+structure-blind estimator, and Section~\ref{sec:weight-maps} measures it at
+$13.6\%$ of the clean scene at the first iteration with the structure
+normalisation active. The normalisation redistributes the residuals relative
+to one another but cannot alter the fact that, far from the solution, the
+residual is large almost everywhere and the distribution is nothing like the
+one the estimator presumes. Two remedies are standard elsewhere and untried
+here. The tuning constant of the Tukey function can be annealed, beginning
+large so that almost nothing is rejected and contracting to its nominal value
+of $4.6851$ as the error falls, which is the deterministic-annealing strategy
+used in robust registration; alternatively the weighting can simply be held at
+the identity for an initial phase and enabled once the residual distribution
+has narrowed. Either would be straightforward to evaluate against the weight
+maps already produced, which give the figure to be improved upon.
+
+\paragraph{Real images and other classes of outlier.}
+Every result reported here is obtained in simulation, with the target rendered
+from a photograph by a planar image simulator, so the only departures from the
+constancy assumption are those deliberately introduced. Experiments on a real
+camera would add sensor noise, calibration error and, most importantly,
+illumination that varies over the scene and over time. That last is not merely
+a further difficulty but the test of a specific claim made in
+Section~\ref{sec:hermite-weight-limitation}: the intensity-based structure
+measure was rejected there in favour of the zero-mean formulation although it
+attained the smaller error on the nominal run, $0.088^{\circ}$ against
+$0.385^{\circ}$ in rotation, on the ground that it would behave differently on
+a scene in which brightness and texture were uncorrelated. Simulation from a
+single photograph cannot produce such a scene; a real one will. In the same
+direction, specular highlights, moving objects and partial illumination change
+are all local violations of the same assumption as occlusion but with
+different spatial and temporal signatures, and there is no reason to expect a
+weighting tuned against a static occluder to handle all of them equally.
+
+\paragraph{Correlated residuals.}
+A theoretical point deserves recording, since it bears on the estimator rather
+than on the experiments. The measurements are Hermite responses computed with
+$9\times9$ filters at every interior position, so the supports of neighbouring
+measurements overlap heavily and their residuals are strongly correlated in
+space. The M-estimator of Section~\ref{sec:robust-framework}, like the robust
+scale of Section~\ref{sec:mad}, treats them as independent: the median
+absolute deviation of $264\,000$ correlated residuals is not the estimate of
+scale that the same expression would give for independent ones, and the
+effective number of independent measurements is smaller, perhaps considerably
+smaller, than $P$. This does not invalidate the scheme, which works, but it
+does mean that the breakdown point quoted for the estimator is an
+overstatement and that the weighting is not the maximum-likelihood
+construction that the derivation suggests. Quantifying the effective
+independence --- for instance from the autocorrelation of the residual field
+--- would put the robust scale on a sounder footing and would give the
+occlusion fraction of the preceding paragraph a theoretical prediction to be
+tested against.
+
+\paragraph{Learned measures of reliability.}
+Finally, the structure measure adopted here is hand-designed, and its
+justification is that it approximates a quantity --- the norm of a row of the
+interaction matrix --- that can be written down. An alternative is to learn a
+per-measurement reliability directly, from pairs of images in which the
+corrupted regions are known, and the appeal is that a learned measure could
+condition on evidence the present one discards: the residual's history over
+the trajectory, the response across scales rather than its aggregate, the
+agreement of a measurement with its neighbours. The reservation is equally
+plain, and this chapter is the reason for it. A measure with no analytical
+relation to the interaction matrix cannot be defended by the argument of
+Section~\ref{sec:hermite-principle}, and the ablation of
+Section~\ref{sec:hermite-weight-limitation} shows what happens to a measure
+that lacks such a relation: it can attain the better final error on the
+configuration it was chosen on while resting on no property that transfers.
+Any learned weighting should therefore be evaluated on the criteria this
+chapter applied to a hand-designed one --- whether it recovers the identity as
+the data cease to contain outliers, whether its behaviour depends on
+brightness or on structure, and whether it survives a scene it was not
+selected on.
+
+% ======================================================================
+%  EVERY NUMBER HERE IS FROM THE CHAPTER. No new quantity is introduced.
+%    54, 0.62 per cent          gain and damping      (4.7.2)
+%    three orders of magnitude  nominal vs occluded   (4.7.2)
+%    28 per cent, 8 per cent    V2/V3 margins         (4.7.2)
+%    thirty-four                terminal jitter       (4.7.2)
+%    13.6 per cent              early over-rejection  (4.7.3)
+%    5.80 per cent              occluder at desired pose (4.6.3, 4.7.2)
+%    twenty per cent, six, twenty-eight  convolution cost (4.4.1)
+%    0.088 vs 0.385 deg         measure ablation      (4.4.4)
+%    4.6851                     Tukey constant        (4.3.1)
+%    264 000                    feature dimension     (4.6.2)
+%
+%  REFERENCES THIS SECTION RESOLVES
+%    4.4.4  "...is identified as an open point in Section~\ref{sec:future}"
+%    4.7.1  "...the study over several initial poses that
+%            Section~\ref{sec:future} identifies as outstanding"
+%    4.7.2  "...identified in Section~\ref{sec:future}" (twice: the
+%            multi-pose study, and the gain schedule)
+%    4.7.3  via 4.4.4
+%    4.8    "...identified in Section~\ref{sec:future}"
+%  Check each of these reads correctly against the paragraph it now points
+%  to. The two in 4.7.2 point at different paragraphs of this section, so
+%  if you would rather they were specific, give the paragraphs their own
+%  labels -- sec:future-gain and sec:future-poses would do.
+%
+%  LABELS USED ABOVE
+%    eq:lambda , eq:hessian-floor
+%    sec:robust-framework   4.2      sec:mad                4.3.2
+%    sec:tukey-limitation   4.3.3    sec:hermite-principle   4.4.1
+%    sec:hermite-weight-limitation 4.4.4
+%    sec:robust-stability   4.5      sec:ablation-results    4.7
+%    sec:nominal            4.7.1    sec:occlusion           4.7.2
+%    sec:weight-maps        4.7.3
+%
+%  IF YOU NEED IT SHORTER, cut in this order: the learned-measures
+%  paragraph (it is the most speculative), then the correlated-residuals
+%  paragraph (it is the most technical), then the second half of the
+%  occlusion-versus-texture paragraph. Do not cut the gain schedule or the
+%  multi-pose study; the first is the chapter's most valuable finding and
+%  the second is the answer to the question an examiner will certainly ask
+%  about single runs.
+% ======================================================================
