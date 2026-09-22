@@ -1,0 +1,234 @@
+% ======================================================================
+%  Section 4.8 --- Conclusion.  WRITTEN.
+%
+%  FOUR DECISIONS I MADE IN WRITING IT, each of which you may want to
+%  reverse, and one of which you should think about before you do.
+%
+%  1. IT CLAIMS ONE RESULT, NOT TWO.
+%     The chapter has a decisive result -- robust weighting buys two to
+%     three orders of magnitude under occlusion -- and an undecided one --
+%     whether the structure-informed measure improves on generic Tukey
+%     weighting. 4.7.2 reports the second as a tie leaning to Variant 2 in
+%     translation. A conclusion that presents both as achievements will be
+%     read as overclaiming and will cost you the first as well as the
+%     second. So the conclusion claims the first, states the second as
+%     undecided, and rests the case for the proposed weighting on the
+%     formulation and the mechanism, where the evidence actually is.
+%     This is not a weak conclusion. "Robust weighting is necessary in
+%     direct visual servoing and here is a four-hundred-fold demonstration"
+%     is a strong chapter. It just is not the chapter you set out to write,
+%     and it is better to say so than to be asked.
+%
+%  2. IT REPORTS THE GAIN-SCHEDULE FINDING AS A CONTRIBUTION.
+%     It was arrived at accidentally, by way of explaining why the two
+%     tables disagree by three orders of magnitude. It is nonetheless the
+%     most actionable thing in the chapter and it is quantified to 0.62 per
+%     cent. Burying it in 4.7.2 would waste it.
+%
+%  3. IT REPORTS THE DC-FREE CORRECTION AS A METHODOLOGICAL FINDING.
+%     That summed Gauss-Hermite kernels have a DC gain equal to their L1
+%     norm, so that a structure measure built from them reports local
+%     brightness and not local structure, is a transferable observation
+%     that anyone building such a measure would want. One sentence.
+%
+%  4. IT DOES NOT SUMMARISE THE CHAPTER SECTION BY SECTION.
+%     A conclusion that recapitulates 4.2, then 4.3, then 4.4 is the part
+%     of a thesis nobody reads. This one states what is now known that was
+%     not known at the start of the chapter, which is a different and
+%     shorter list.
+%
+%  NOTE ON NUMBERS: every figure quoted here appears in 4.7, at iteration
+%  600, in the corrected units. No new quantity is introduced. If you
+%  change a number in 4.7, it changes here -- there are seven of them and
+%  they are listed at the foot.
+% ======================================================================
+
+\section{Conclusion}
+\label{sec:ch4-conclusion}
+
+The photometric scheme of Chapter~\ref{ch:herpvs} uses every pixel of the
+image as a measurement, and takes its accuracy from that redundancy. The same
+redundancy is its weakness: the control law assumes that every measurement is
+explained by the pose, and an occlusion, a specular highlight or a moving
+object violates that assumption over a compact region of the image while
+leaving the rest of it intact. This chapter addressed that vulnerability, and
+did so by treating the difficulty as one of estimation rather than of
+optimisation. The cost is not hard to minimise in the presence of an occluder;
+minimising it is the wrong thing to do, because the occluded measurements do
+not raise the cost at the correct pose but displace the pose at which the cost
+is least.
+
+Two things were proposed. The first is the weighted control
+law~\eqref{eq:robust-lm-law}, in which a diagonal weighting acts on the
+feature error and the interaction matrix alike, with the weights recomputed at
+every iteration from a redescending estimator and a robust scale. Setting the
+weights to unity recovers the scheme of Chapter~\ref{ch:herpvs} up to the
+floor~\eqref{eq:hessian-floor} on the damped Hessian, so the unweighted scheme
+is the degenerate case of the formulation rather than a separate method placed
+beside it. The second is the structure-informed weight
+of~\eqref{eq:hermite-weights}, which normalises each residual by a
+scale-aggregated measure of the local Hermite structure before submitting it
+to the estimator. Its justification is not heuristic: by the factorisation
+established in Section~\ref{sec:hermite-principle} the norm of a row of the
+interaction matrix is the product of the local gradient magnitude and a term
+depending only on the image coordinates and the depth, and the structure
+measure is a scale-aggregated gradient magnitude, so a measurement carrying
+little structure also constrains the pose weakly, whatever the cause of its
+flatness.
+
+The principal result is quantitative and is not in doubt. Under an occlusion
+covering some six per cent of the measurements, the unweighted scheme settles
+$1293\,\mu\mathrm{m}$ and $1.70^{\circ}$ from the desired pose, while both
+weighted variants settle within $3.2\,\mu\mathrm{m}$ and $0.017^{\circ}$: a
+factor of between four and five hundred in translation and of about a hundred
+in rotation. Robust weighting is therefore not a refinement of a direct scheme
+but a condition of its usefulness outside the laboratory.
+
+The manner of the unweighted scheme's failure is the more instructive half of
+that result, and it is the clearest demonstration in this thesis of why the
+estimation framing is the right one. Variant~1 did not diverge, oscillate or
+stall prematurely, and it did not come to rest at a higher cost than the
+weighted variants. It attained the \emph{smallest} final feature error of the
+three, lower by $1.4\%$, at a pose error larger by a factor of four hundred,
+and its pose was unchanged to six significant figures over the last two
+hundred iterations. It converged accurately upon the wrong answer. The
+consequence for practice is immediate: no criterion computed from the same
+corrupted measurements that drive the control can detect this failure, and a
+practitioner monitoring the residual would have judged the unweighted run the
+most successful of the three.
+
+Against that, the chapter also measured what weighting costs when there is
+nothing to reject, which the literature more often assumes than reports. On
+the clean target the weighted variants are the less accurate, by a few tenths
+of a degree in rotation and a fraction of a millimetre in translation, and the
+degradation falls almost entirely on the depth and the rotation coupled to it
+--- the two degrees of freedom that a fronto-parallel photometric measurement
+constrains least securely. The weight maps of Section~\ref{sec:weight-maps}
+show why the penalty does not disappear at convergence: the scale is estimated
+from the residuals and contracts with them, so the mean weight on a clean
+scene at convergence is $0.789$ and only one measurement in seven carries
+full weight. An M-estimator with an adaptive scale does not switch itself off
+when the data cease to contain outliers, and the cost of robustness on a clean
+scene is accordingly permanent rather than transient. It is a cost worth
+paying at the exchange rate the occlusion experiment establishes, but it
+should be paid knowingly.
+
+The weight maps also settled how the mechanism operates, and the answer was
+not the expected one. The rejection of the occluder is not available at the
+outset and does not enable the convergence; it is produced by the convergence.
+At the first iteration the misalignment residual dominates the image, the
+robust scale is large in proportion, and at most a tenth of the occluded
+region is rejected --- against a third of the clean scene's valid measurements
+carried below a quarter weight, which is the over-rejection that motivated the
+structure normalisation in the first place and which the normalisation reduces
+but does not remove. Only as the pose error falls, and the scale with it, does
+the occluder become the sole large residual in the image and is rejected
+decisively, as a solid region covering the measurements that are corrupted.
+Robust weighting and pose convergence reinforce one another.
+
+Three further findings should be recorded, none of them anticipated when the
+chapter was begun. The first is that a structure measure built from summed
+Gauss--Hermite kernels cannot serve, because their gain at zero frequency
+equals their $L_{1}$ norm: such a measure reports local \emph{brightness} and
+not local structure, and the measure must be built from the odd, zero-mean
+kernels for the argument of Section~\ref{sec:hermite-principle} to hold of it
+at all. The second is that the fixed floor~\eqref{eq:hessian-floor} renders
+the rank condition of Section~\ref{sec:weighted-law} non-binding by
+construction, so that no monitoring of the conditioning is required; what the
+floor cannot restore is the information the rejected measurements carried, and
+the consequence of rejecting too many is a loss of accuracy rather than a
+divergence. The third is the most useful of the three and was arrived at
+indirectly. Because the adaptive gain is proportional to the intensity error,
+and the commanded velocity to the residual in addition, the velocity decays
+roughly as the cube of the error and the nominal runs stall while a
+sub-millimetre misalignment remains. Under occlusion the intensity error
+cannot decay, a fixed residual persisting wherever the reference has no
+counterpart, so the gain is held some fifty-four times higher, the cubic
+collapse is replaced by a velocity linear in the error, and the final accuracy
+improves by three orders of magnitude. The relation is not an interpretation
+placed on the data: since the damping depends on the same intensity error with
+a fifth-power relation to the gain, the damping ratio can be predicted from
+the gain ratio, and across three runs the prediction agrees with the
+measurement to within $0.62\%$, the exponent recovered from the data being
+$9.997$ against the $10$ of~\eqref{eq:mu}. The stall of the nominal runs is
+therefore a property of the gain schedule inherited from the implementation
+and not of the weighting or of the features, and a gain that does not vanish
+with the error is the single most valuable improvement the chapter identifies.
+
+What the chapter does not establish should be stated as plainly. It does not
+rank the three variants. Each figure rests on one run from one initial pose,
+and the two weighted variants are not separated by the occlusion experiment:
+Tukey weighting attained the smaller translational error, by $28\%$, and the
+structure-informed weighting the smaller rotational error, by $8\%$, at
+magnitudes --- under a micrometre apart --- at which the difference is without
+practical consequence and cannot be shown to be systematic. The proposed
+weighting is therefore not demonstrated here to position more accurately than
+a generic robust estimator; what is demonstrated is that it reaches comparable
+accuracy by a different route, suppressing measurements for what the image
+lacks rather than for how far they depart from a pose estimate that is itself
+in error. The one systematic difference observed between the two is not in the
+proposal's favour: the structure-informed variant comes to rest with a
+terminal jitter thirty-four times larger, its weights continuing to vary after
+its pose has ceased to improve. Nor was a weight map recorded for the
+residual-based variant, so even the claim about the mechanism is not
+comparative. Establishing any of this would require the study over several
+initial poses, and the further measurements, identified in
+Section~\ref{sec:future}.
+
+The contribution of the chapter is accordingly narrower than a ranking and
+firmer than one. A robust, structure-informed weighting has been formulated
+for the Hermite-based photometric scheme, given a justification that rests on
+the structure of the interaction matrix rather than on intuition, situated
+within the stability analysis of the unweighted case, and evaluated in an
+ablation in which the weighting is the only quantity varied. Within that
+ablation, robust weighting is shown to be decisive against occlusion, the
+failure it prevents is shown to be undetectable from the cost, the price of
+robustness on uncorrupted data is measured rather than assumed, and the
+mechanism by which the weighting acts is made directly observable. Whether the
+structural information improves upon a generic estimator remains open, and the
+experiments needed to close it are named.
+
+% ======================================================================
+%  THE SEVEN NUMBERS QUOTED HERE, all from 4.7 at iteration 600. If any
+%  changes there, change it here.
+%    1293 um, 1.70 deg          Variant 1 occluded      (4.7.2)
+%    3.2 um, 0.017 deg          bound on Variants 2, 3  (4.7.2)
+%    1.4 per cent               V1's feature error deficit (4.7.2)
+%    0.789                      mean weight, clean, 600 (4.7.3)
+%    28 per cent, 8 per cent    V2/V3 margins           (4.7.2)
+%    54, 0.62 per cent, 9.997   gain and damping        (4.7.2)
+%    thirty-four                V3 terminal jitter      (4.7.2)
+%  Two proportions are quoted in words rather than figures -- "at most a
+%  tenth of the occluded region" and "a third of the clean scene's valid
+%  measurements" (13.6 per cent) -- because a conclusion reads badly when
+%  it is dense with decimals. Both are exact as stated.
+%
+%  LABELS USED
+%    ch:herpvs                Chapter 3
+%    eq:robust-lm-law         the weighted control law (4.4)
+%    eq:hessian-floor         the floor on the damped Hessian (4.2.2)
+%    eq:hermite-weights       the structure-informed weights (4.13)
+%    eq:mu                    the damping
+%    sec:hermite-principle    4.4.1
+%    sec:weighted-law         4.2.2
+%    sec:weight-maps          4.7.3
+%    sec:future               future work
+%
+%  ONE THING TO DECIDE. The seventh paragraph is long -- three findings in
+%  one paragraph, the third of them substantial. If you would rather, the
+%  gain-schedule finding can stand alone as its own paragraph or even as a
+%  short numbered subsection, since it is the chapter's most actionable
+%  result and a reader skimming the conclusion should not be able to miss
+%  it. I have left it inside the paragraph so that the conclusion does not
+%  appear to end on a result about the implementation rather than about
+%  the method; move it if you disagree.
+%
+%  AND ONE THING I DELIBERATELY LEFT OUT. The computational cost. The
+%  timings in the logs measure machine load, not the algorithm -- Variant 3
+%  runs fastest of the three in one set and slowest in another -- so no
+%  cost claim can be made from them, and a conclusion is the wrong place
+%  to introduce a caveat of that kind. If you instrument the weight
+%  computation as suggested in 4.7.2, a sentence here would be worth
+%  having: the argument of 4.4.1 predicts about twenty per cent, and a
+%  measured twenty per cent would close the chapter well.
+% ======================================================================
