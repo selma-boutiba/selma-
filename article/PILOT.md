@@ -96,13 +96,18 @@ V5 shows no consistent gain over V2 (ratios 0.54–1.07) and V4 none (0.59–1.1
 - With the current-image matrix, V3 narrows the convergence domain. This is a
   limitation the chapter should state.
 
-## 5. Decisions for the confirmatory campaign (draft, see `PREREGISTRATION.md`)
+## 5. Decisions for the confirmatory campaign (approved, see `PREREGISTRATION.md`)
 
 - Weightings V1–V4. V5 is dropped: no consistent effect, and 20 % of the
   compute.
 - Both interaction matrices; the four scenes; 32 poses → 1 024 runs, about 12 h
   on four cores.
-- Primary family (Holm, 3 tests):
+- Primary family (Holm, 6 tests):
   **P1a/P1b** desired-image matrix, dark disc: V3 vs V2 on camera-centre and
   rotation error (Wilcoxon);
-  **P2** current-image matrix, clean scene: success V3 vs V2 (exact McNemar).
+  **P2a–d** current-image matrix, each of the four scenes: success V3 vs V2
+  (exact McNemar), extended to the occluded scenes at the author's request.
+
+`pilot/decision.txt` comes from the same analysis program, but with four
+poses no primary test can be computed (P1 needs six pairs; two discordant
+pairs give p = 0.5). It carries no information.

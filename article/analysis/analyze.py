@@ -18,8 +18,10 @@ Statistical plan (fixed before the confirmatory runs; see PLAN.md):
   effect        Hodges-Lehmann estimate of the median log-ratio A/B,
                 back-transformed, with its exact distribution-free CI
   test          Wilcoxon signed-rank (exact when possible), two-sided
-  multiplicity  Holm within the pre-registered primary family (--primary),
-                and separately within the remaining, secondary comparisons
+  multiplicity  Holm within the pre-registered primary family, accuracy
+                tests (--primary, over poses where both runs succeed) and
+                success tests (--primary-success, McNemar) together; Holm
+                separately within the secondary comparisons
   equivalence   the (--equiv-conf) CI of the ratio inside [1/1.25, 1.25];
                 0.95 is TOST at 5 % per outcome, Bonferroni over two outcomes
   success       paired success indicators, exact McNemar test
@@ -52,7 +54,12 @@ PRIMARY = [("tukey", "none"), ("hermite", "tukey"), ("penalised", "tukey"),
 EQUIV_MARGIN = 1.25
 # Provisional primary family (interaction, scenario, A, B); fix it after the
 # pilot and before the confirmatory runs, then do not change it.
-DEFAULT_PRIMARY = "desired:uniform_dark_f070:hermite:tukey,desired:uniform_dark_f070:adaptive:tukey"
+# Pre-registered primary family (PREREGISTRATION.md): accuracy tests (P1)
+# and success tests (P2), Holm over all of them together.
+DEFAULT_PRIMARY = "desired:uniform_dark_disc:hermite:tukey"
+DEFAULT_PRIMARY_SUCCESS = ("current:nominal:hermite:tukey,current:uniform_dark_disc:hermite:tukey,"
+                           "current:textured_disc:hermite:tukey,current:low_contrast_disc:hermite:tukey")
+RATIO_RULE = 0.8  # decision rule: method paper iff both P1 tests significant with ratio <= 0.8
 
 
 # ---------------------------------------------------------------------------
@@ -169,13 +176,16 @@ def holm(p):
     return adj
 
 
-def compare(runs, a, b, outcome, equiv_conf=0.95):
-    """Paired comparison of weightings a and b over common poses."""
-    A = runs[runs.weighting == a].set_index("pose_id")[outcome]
-    B = runs[runs.weighting == b].set_index("pose_id")[outcome]
+def compare(runs, a, b, outcome, equiv_conf=0.95, require_success=False):
+    """Paired comparison of weightings a and b over common poses; with
+    require_success, only over poses where both runs succeed (P1)."""
+    A = runs[runs.weighting == a].set_index("pose_id")
+    B = runs[runs.weighting == b].set_index("pose_id")
     common = A.index.intersection(B.index)
-    x, y = A.loc[common].to_numpy(float), B.loc[common].to_numpy(float)
+    x, y = A.loc[common, outcome].to_numpy(float), B.loc[common, outcome].to_numpy(float)
     ok = np.isfinite(x) & np.isfinite(y) & (x > 0) & (y > 0)
+    if require_success:
+        ok &= A.loc[common, "success"].to_numpy(bool) & B.loc[common, "success"].to_numpy(bool)
     n = int(ok.sum())
     res = {"A": a, "B": b, "outcome": outcome, "n": n}
     if n < 6:
@@ -343,7 +353,9 @@ def main(argv=None):
     ap.add_argument("--r-thr", type=float, default=1.0, help="success: rotation (deg); fix after the pilot")
     ap.add_argument("--v-thr", type=float, default=1e-3, help="convergence: ||v|| (m/s)")
     ap.add_argument("--primary", default=DEFAULT_PRIMARY,
-                    help="comma-separated interaction:scenario:A:B entries of the primary family")
+                    help="primary accuracy tests (P1): comma-separated interaction:scenario:A:B")
+    ap.add_argument("--primary-success", default=DEFAULT_PRIMARY_SUCCESS,
+                    help="primary success tests (P2, McNemar): comma-separated interaction:scenario:A:B")
     ap.add_argument("--equiv-conf", type=float, default=0.95)
     ap.add_argument("--no-figures", action="store_true")
     args = ap.parse_args(argv)
@@ -376,28 +388,69 @@ def main(argv=None):
 
     # Paired comparisons, Holm over the whole family
     primary = {tuple(e.split(":")) for e in args.primary.split(",") if e}
+    primary_s = {tuple(e.split(":")) for e in args.primary_success.split(",") if e}
+    pairs = list(dict.fromkeys(list(PRIMARY) + sorted(tuple(k[2:]) for k in primary | primary_s)))
     comps, mcn, dec = [], [], []
     for (inter, scen), g in runs.groupby(["interaction", "scenario"]):
         present = set(g.weighting)
-        for a, b in PRIMARY:
+        for a, b in pairs:
             if a in present and b in present:
                 fam = "primary" if (inter, scen, a, b) in primary else "secondary"
                 for outcome in ("final_t_mm", "final_r_deg"):
-                    comps.append({"interaction": inter, "scenario": scen, "family": fam,
-                                  **compare(g, a, b, outcome, args.equiv_conf)})
-                mcn.append({"interaction": inter, "scenario": scen, **mcnemar(g, a, b)})
+                    row = compare(g, a, b, outcome, args.equiv_conf, require_success=(fam == "primary"))
+                    if fam == "secondary":  # also over the poses where both succeed
+                        s_ = compare(g, a, b, outcome, args.equiv_conf, require_success=True)
+                        row.update({"n_s": s_["n"], "ratio_s": s_["ratio"], "ci95_lo_s": s_["ci95_lo"],
+                                    "ci95_hi_s": s_["ci95_hi"],
+                                    "equivalent_s": bool(s_["eq_lo"] >= 1 / EQUIV_MARGIN and s_["eq_hi"] <= EQUIV_MARGIN)})
+                    comps.append({"interaction": inter, "scenario": scen, "family": fam, **row})
+                fam_s = "primary" if (inter, scen, a, b) in primary_s else "secondary"
+                mcn.append({"interaction": inter, "scenario": scen, "family": fam_s, **mcnemar(g, a, b)})
         dec.append({"interaction": inter, "scenario": scen, **decoupling(g)})
-    comps = pd.DataFrame(comps)
+    comps, mcn = pd.DataFrame(comps), pd.DataFrame(mcn)
     if len(comps):
         comps["p_holm"] = np.nan
-        for fam in ("primary", "secondary"):
-            sel = comps.p.notna() & (comps.family == fam)
-            if sel.any():
-                comps.loc[sel, "p_holm"] = holm(comps.loc[sel, "p"].to_numpy())
+        sel = comps.p.notna() & (comps.family == "secondary")
+        if sel.any():
+            comps.loc[sel, "p_holm"] = holm(comps.loc[sel, "p"].to_numpy())
         comps["equivalent"] = (comps.eq_lo >= 1 / EQUIV_MARGIN) & (comps.eq_hi <= EQUIV_MARGIN)
+    if len(mcn):
+        mcn["p_holm"] = np.nan
+        sel = mcn.family == "secondary"
+        if sel.any():
+            mcn.loc[sel, "p_holm"] = holm(mcn.loc[sel, "p_mcnemar"].to_numpy())
+    # The primary family: accuracy (P1) and success (P2) tests, Holm together.
+    prim = []
+    if len(comps):
+        for _, c in comps[comps.family == "primary"].iterrows():
+            prim.append({"test": "P1", "type": "Wilcoxon (both succeed)", "interaction": c.interaction,
+                         "scenario": c.scenario, "comparison": f"{c.A} / {c.B}", "outcome": c.outcome,
+                         "n": c.n, "effect": c.ratio, "ci95": f"[{c.ci95_lo:.3g}, {c.ci95_hi:.3g}]", "p": c.p})
+    if len(mcn):
+        for _, m in mcn[mcn.family == "primary"].iterrows():
+            prim.append({"test": "P2", "type": "McNemar (success)", "interaction": m.interaction,
+                         "scenario": m.scenario, "comparison": f"{m.A} / {m.B}", "outcome": "success",
+                         "n": m.A_only + m.B_only, "effect": m.A_only - m.B_only,
+                         "ci95": f"{m.A}-only {m.A_only}, {m.B}-only {m.B_only}", "p": m.p_mcnemar})
+    prim = pd.DataFrame(prim)
+    decision = "no primary tests found"
+    if len(prim):
+        valid = prim.p.notna()
+        prim["p_holm"] = np.nan
+        prim.loc[valid, "p_holm"] = holm(prim.loc[valid, "p"].to_numpy())
+        p1 = prim[prim.test == "P1"]
+        method = len(p1) > 0 and bool(((p1.p_holm < 0.05) & (p1.effect <= RATIO_RULE)).all())
+        decision = ("method paper: every P1 test is significant after Holm with ratio <= %.2f" % RATIO_RULE
+                    if method else "analysis paper: the P1 condition is not met")
+        if len(comps):
+            comps.loc[comps.family == "primary", "p_holm"] = prim[prim.test == "P1"].p_holm.to_numpy()
+    if len(comps):
         comps = comps.sort_values(["family", "interaction", "scenario"])
     comps.to_csv(os.path.join(args.out, "comparisons.csv"), index=False)
-    pd.DataFrame(mcn).to_csv(os.path.join(args.out, "mcnemar.csv"), index=False)
+    mcn.to_csv(os.path.join(args.out, "mcnemar.csv"), index=False)
+    prim.to_csv(os.path.join(args.out, "primary.csv"), index=False)
+    with open(os.path.join(args.out, "decision.txt"), "w") as fh:
+        fh.write(decision + "\n")
     pd.DataFrame(dec).to_csv(os.path.join(args.out, "decoupling.csv"), index=False)
     with open(os.path.join(args.out, "summary_table.tex"), "w") as fh:
         fh.write(latex_summary(summary) + "\n")
@@ -405,6 +458,14 @@ def main(argv=None):
     # Markdown report
     with open(os.path.join(args.out, "report.md"), "w") as fh:
         fh.write(f"# Campaign results\n\n{len(runs)} runs, {runs.pose_id.nunique()} poses.\n\n")
+        fh.write(f"## Primary family (Holm over {len(prim)} tests)\n\n**Decision:** {decision}\n\n")
+        if len(prim):
+            fh.write("| test | interaction | scenario | comparison | outcome | n | effect | 95 % CI / counts | p | p (Holm) |\n")
+            fh.write("|---|---|---|---|---|---|---|---|---|---|\n")
+            for _, q in prim.iterrows():
+                fh.write(f"| {q.test} | {q.interaction} | {q.scenario} | {q.comparison} | {q.outcome} | {q.n} | "
+                         f"{q.effect:.3g} | {q.ci95} | {q.p:.3g} | {q.p_holm:.3g} |\n")
+            fh.write("\n")
         fh.write("## Final pose error per cell (median [IQR])\n\n")
         fh.write("| interaction | scenario | weighting | n | translation (mm) | rotation (deg) | success | tail slope |\n")
         fh.write("|---|---|---|---|---|---|---|---|\n")

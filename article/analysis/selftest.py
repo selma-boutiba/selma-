@@ -26,9 +26,12 @@ COLS = ("iter,tx,ty,tz,tux,tuy,tuz,ox,oy,oz,vx,vy,vz,wx,wy,wz,e2,eI2,lambda,mu,h
         "mean_w,frac_w01,frac_w25,frac_w25_c0,frac_w25_c1,frac_w25_c2,frac_w25_c3,dW,t_weight_ms,t_iter_ms")
 
 
-def trajectory(rng, scenario, bias_mm, n=600):
+def trajectory(rng, scenario, bias_mm, n=600, basin_failure=False):
     k = np.arange(1, n + 1, dtype=float)
-    a = rng.uniform(5.0, 9.0)                       # mm
+    a = rng.uniform(0.5, 0.9)                       # mm: converged runs end well inside the threshold
+    if basin_failure:                               # stalls and drifts away
+        t = 300.0 + 0.3 * k
+        return k, t, t * 0.05
     if scenario == "nominal":
         t = a * ((k + 20.0) / 21.0) ** -0.5
     else:
@@ -81,13 +84,18 @@ def main():
                         b = base
                     else:
                         b = base * factor[(inter, w)] * np.exp(0.03 * rng.normal())
-                    k, t, r = trajectory(rng, scen, b)
+                    fail = inter == "current" and w == "hermite" and pose % 2 == 0   # planted: V3 loses half
+                    k, t, r = trajectory(rng, scen, b, basin_failure=fail)
                     meta = {"weighting": w, "interaction": inter, "ref_texture": "peppers.jpg",
                             "servo_texture": servo, "pose_id": pose}
                     write_run(os.path.join(logdir, f"{inter}_{scen}_{w}_p{pose:02d}.csv"), meta, k, t, r, rng)
 
     subprocess.run([sys.executable, os.path.join(HERE, "analyze.py"), logdir, "--poses",
-                    os.path.join(tmp, "poses.csv"), "--out", out], check=True)
+                    os.path.join(tmp, "poses.csv"), "--out", out,
+                    "--primary", "desired:uniform_dark_f070:hermite:tukey",
+                    "--primary-success", "current:nominal:hermite:tukey,current:uniform_dark_f070:hermite:tukey",
+                    "--t-thr", "1.0", "--r-thr", "0.5"],   # thresholds on the synthetic scale
+                   check=True)
     comps = pd.read_csv(os.path.join(out, "comparisons.csv"))
     summ = pd.read_csv(os.path.join(out, "summary.csv"))
 
@@ -99,15 +107,21 @@ def main():
     checks = []
     occ = "uniform_dark_f070"
     c = get("desired", occ, "hermite", "tukey")
-    checks.append(("V3/V2 with desired L recovered as 0.6, significant after Holm",
-                   abs(c.ratio - 0.6) < 0.05 and c.p_holm < 0.01))
+    checks.append(("V3/V2 with desired L recovered as 0.6, significant after Holm (primary)",
+                   c.family == "primary" and abs(c.ratio - 0.6) < 0.05 and c.p_holm < 0.01))
     c = get("current", occ, "hermite", "tukey")
-    checks.append(("V3/V2 with current L declared equivalent within 25 %", bool(c.equivalent)))
+    checks.append(("V3/V2 with current L equivalent within 25 % where both succeed", bool(c.equivalent_s)))
+    prim = pd.read_csv(os.path.join(out, "primary.csv"))
+    p2 = prim[prim.test == "P2"]
+    checks.append(("P2: planted loss of half the poses detected by McNemar after Holm",
+                   len(p2) == 2 and bool((p2.p_holm < 0.01).all())))
+    decision = open(os.path.join(out, "decision.txt")).read()
+    checks.append(("decision rule returns the method paper", decision.startswith("method paper")))
     c = get("desired", occ, "penalised", "tukey")
     checks.append(("V4/V2 with desired L recovered as 1.5", abs(c.ratio - 1.5) < 0.1 and c.p_holm < 0.01))
     c = get("current", occ, "tukey", "none")
     checks.append(("V2/V1 under occlusion recovered as 1/400", abs(np.log(c.ratio * 400)) < 0.2))
-    s = summ[(summ.scenario == "nominal")]
+    s = summ[(summ.scenario == "nominal") & ~((summ.interaction == "current") & (summ.weighting == "hermite"))]
     checks.append(("nominal tail slope recovered as -1/2", bool(np.all(np.abs(s.slope_t + 0.5) < 0.05))))
     s = summ[(summ.scenario == occ) & (summ.weighting == "none")]
     checks.append(("V1 under occlusion mostly fails the success criterion", bool(np.all(s.success < 0.5))))

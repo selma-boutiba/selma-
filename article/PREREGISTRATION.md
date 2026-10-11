@@ -1,8 +1,9 @@
 # Pre-registration — confirmatory campaign
 
-**Status: DRAFT, awaiting the author's approval.** Once approved, commit this
-file unchanged before the first confirmatory run. The commit timestamp records
-that the hypotheses preceded the data.
+**Status: APPROVED by the author on 2026-10-11**, with one change to the draft:
+P2 extended from the clean scene to the three occluded scenes. This file is
+committed before the first confirmatory run and is not edited afterwards; the
+commit timestamp records that the hypotheses preceded the data.
 
 | Item | Value |
 |---|---|
@@ -16,13 +17,23 @@ that the hypotheses preceded the data.
 | Outcomes | final camera-centre error (mm) and rotation error (deg): median of the last 50 passes of ${}^{c^*}\mathbf M_c$ |
 | Success | camera-centre error < 20 mm and rotation error < 1° |
 
-## Primary family (Holm, α = 0.05, 3 tests)
+## Primary family (Holm, α = 0.05, 6 tests)
 
 | | Comparison | Test | Prediction |
 |---|---|---|---|
 | P1a | desired-image L, dark disc, V3 vs V2, camera-centre error | Wilcoxon signed-rank, two-sided, poses where both succeed | V3 < V2 |
 | P1b | same, rotation error | same | V3 < V2 |
-| P2 | current-image L, clean scene, success V3 vs V2 | exact McNemar, two-sided | V3 succeeds less often |
+| P2a | current-image L, clean scene, success V3 vs V2 | exact McNemar, two-sided | V3 succeeds less often |
+| P2b | current-image L, dark disc, success V3 vs V2 | same | same |
+| P2c | current-image L, textured disc, success V3 vs V2 | same | same |
+| P2d | current-image L, low-contrast disc, success V3 vs V2 | same | same |
+
+Analysis command (defaults of `analysis/analyze.py` encode this family):
+
+```bash
+python3 analysis/analyze.py campaign/runs/confirmatory/logs --poses campaign/poses.csv \
+    --out results/confirmatory
+```
 
 Effect sizes: Hodges–Lehmann median ratio with exact 95 % CI (P1); discordant
 counts and the difference in success rate (P2).
@@ -33,7 +44,7 @@ counts and the difference in success rate (P2).
   ≤ 0.8. Contribution: structure-informed weighting improves robust
   photometric servoing when the interaction matrix is taken from the desired
   image, as Proposition 1 predicts, and it narrows the convergence domain
-  when the matrix is taken from the current image (P2).
+  when the matrix is taken from the current image (P2a–d).
 - **Analysis paper** otherwise.
 
 ## Secondary, reported with Holm within the family
@@ -54,5 +65,6 @@ weights; success against displacement bin.
 - Success thresholds fixed at 20 mm and 1°: they separate converged runs
   (< 17 mm, < 0.71°) from basin failures (> 440 mm, > 19°) in the pilot.
 - The primary family moved from "V3 and V5 vs V2, desired-image L" to P1–P2
-  above. P2 is added because the pilot's largest effect is on convergence.
+  above. P2 is added because the pilot's largest effect is on convergence, and
+  extended to the occluded scenes at the author's request.
 - H7 (tail slope −1/2) becomes exploratory: measured slopes were −0.6 to −1.1.

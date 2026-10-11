@@ -2,6 +2,19 @@
 
 160 runs, 4 poses.
 
+## Primary family (Holm over 6 tests)
+
+**Decision:** analysis paper: the P1 condition is not met
+
+| test | interaction | scenario | comparison | outcome | n | effect | 95 % CI / counts | p | p (Holm) |
+|---|---|---|---|---|---|---|---|---|---|
+| P1 | desired | uniform_dark_disc | hermite / tukey | final_t_mm | 4 | nan | [nan, nan] | nan | nan |
+| P1 | desired | uniform_dark_disc | hermite / tukey | final_r_deg | 4 | nan | [nan, nan] | nan | nan |
+| P2 | current | low_contrast_disc | hermite / tukey | success | 2 | -2 | hermite-only 0, tukey-only 2 | 0.5 | 1 |
+| P2 | current | nominal | hermite / tukey | success | 2 | -2 | hermite-only 0, tukey-only 2 | 0.5 | 1 |
+| P2 | current | textured_disc | hermite / tukey | success | 2 | -2 | hermite-only 0, tukey-only 2 | 0.5 | 1 |
+| P2 | current | uniform_dark_disc | hermite / tukey | success | 2 | -2 | hermite-only 0, tukey-only 2 | 0.5 | 1 |
+
 ## Final pose error per cell (median [IQR])
 
 | interaction | scenario | weighting | n | translation (mm) | rotation (deg) | success | tail slope |
@@ -51,6 +64,8 @@
 
 | family | interaction | scenario | A / B | outcome | n | ratio [95 % CI] | p (Holm) | equivalent (±25 %) |
 |---|---|---|---|---|---|---|---|---|
+| primary | desired | uniform_dark_disc | hermite / tukey | final_t_mm | 4 | n/a | nan | no |
+| primary | desired | uniform_dark_disc | hermite / tukey | final_r_deg | 4 | n/a | nan | no |
 | secondary | current | low_contrast_disc | tukey / none | final_t_mm | 4 | n/a | nan | no |
 | secondary | current | low_contrast_disc | tukey / none | final_r_deg | 4 | n/a | nan | no |
 | secondary | current | low_contrast_disc | hermite / tukey | final_t_mm | 4 | n/a | nan | no |
@@ -123,8 +138,6 @@
 | secondary | desired | textured_disc | hermite / penalised | final_r_deg | 4 | n/a | nan | no |
 | secondary | desired | uniform_dark_disc | tukey / none | final_t_mm | 4 | n/a | nan | no |
 | secondary | desired | uniform_dark_disc | tukey / none | final_r_deg | 4 | n/a | nan | no |
-| secondary | desired | uniform_dark_disc | hermite / tukey | final_t_mm | 4 | n/a | nan | no |
-| secondary | desired | uniform_dark_disc | hermite / tukey | final_r_deg | 4 | n/a | nan | no |
 | secondary | desired | uniform_dark_disc | penalised / tukey | final_t_mm | 4 | n/a | nan | no |
 | secondary | desired | uniform_dark_disc | penalised / tukey | final_r_deg | 4 | n/a | nan | no |
 | secondary | desired | uniform_dark_disc | adaptive / tukey | final_t_mm | 4 | n/a | nan | no |

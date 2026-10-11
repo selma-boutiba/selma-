@@ -84,9 +84,11 @@ Fix the primary family after the pilot and before the confirmatory runs. Commit
 | H9 | Success falls with occluded fraction; the fraction at which it does depends on the weighting | §4.3.2 | success curves, McNemar | secondary |
 | H10 | $\lambda_{\min}(\mathbf H_{\mathbf W})/(\operatorname{tr}\mathbf H_{\mathbf W}/6)>10^{-6}$ in every converged run; failures coincide with violations | Prop. 2 | logged margin | secondary |
 
-Primary family = H3, H4 × {translation, rotation} = 4 tests, Holm-adjusted.
-Everything else is reported with Holm within the secondary family and labelled
-as such.
+Superseded after the pilot: the confirmatory primary family is in
+`PREREGISTRATION.md` (P1a–b: V3 vs V2 with the desired-image matrix under the
+dark disc; P2a–d: success of V3 vs V2 with the current-image matrix in each
+scene; Holm over the six). Everything else is reported with Holm within the
+secondary family and labelled as such.
 
 ## 4. Design
 

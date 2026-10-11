@@ -1,0 +1,7 @@
+test,type,interaction,scenario,comparison,outcome,n,effect,ci95,p,p_holm
+P1,Wilcoxon (both succeed),desired,uniform_dark_disc,hermite / tukey,final_t_mm,4,,"[nan, nan]",,
+P1,Wilcoxon (both succeed),desired,uniform_dark_disc,hermite / tukey,final_r_deg,4,,"[nan, nan]",,
+P2,McNemar (success),current,low_contrast_disc,hermite / tukey,success,2,-2.0,"hermite-only 0, tukey-only 2",0.5,1.0
+P2,McNemar (success),current,nominal,hermite / tukey,success,2,-2.0,"hermite-only 0, tukey-only 2",0.5,1.0
+P2,McNemar (success),current,textured_disc,hermite / tukey,success,2,-2.0,"hermite-only 0, tukey-only 2",0.5,1.0
+P2,McNemar (success),current,uniform_dark_disc,hermite / tukey,success,2,-2.0,"hermite-only 0, tukey-only 2",0.5,1.0
