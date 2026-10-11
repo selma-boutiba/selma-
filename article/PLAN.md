@@ -104,37 +104,35 @@ The Chapter 5 poses 1–10 (`campaign/poses_ch5.csv`) do not keep the target ove
 the whole image: background pixels enter the feature vector. They are not used
 here. Note this for Chapter 5 as well.
 
-**Scenarios** (`tools/make_occluders.py`, coverage at the desired pose measured
-from the mask):
+**Scenarios** (`tools/make_occluders.py`). The four occluded scenarios keep
+the geometry of the Chapter 4 disc exactly (7.51 % of the image at the desired
+pose, measured from its mask; `VALIDATION.md` F3) and change only its
+appearance, so that appearance is the only variable:
 
 ```bash
-for k in uniform_dark textured low_contrast; do
-  python3 tools/make_occluders.py generate --texture peppers.jpg --kind $k --fraction 0.07 \
-      --out-dir campaign/textures --poses campaign/poses.csv
-done
-for f in 0.15 0.25 0.35 0.45; do
+python3 tools/make_occluders.py refill --clean peppers.jpg --occluded peppers_o_b.jpg \
+    --out-dir campaign/textures --poses campaign/poses.csv
+# -> uniform_dark_disc, uniform_bright_disc, low_contrast_disc, textured_disc
+for f in 0.15 0.25 0.35 0.45; do                       # breakdown sweep (ellipses)
   python3 tools/make_occluders.py generate --texture peppers.jpg --kind uniform_dark \
       --fraction $f --out-dir campaign/textures
 done
-# Chapter 4's own occluder, measured from its mask (item A6):
-python3 tools/make_occluders.py measure --clean peppers.jpg --occluded peppers_o_b.jpg \
-    --poses campaign/poses.csv
 ```
 
 **Runs** (`campaign/run_campaign.sh`):
 
 | Design | Poses | Weightings | L | Scenarios | Runs |
 |---|---|---|---|---|---|
-| validate | 0 | V1–V3 | current, thesis pixel order | nominal, Chapter 4 occluder | 6 |
-| pilot | 101–104 | V1–V5 | current, desired | nominal, dark, textured, low contrast | 160 |
+| validate | 0 | V1–V3 | current, thesis pixel order | nominal, Chapter 4 occluder | 6 (done, `VALIDATION.md`) |
+| pilot | 101–104 | V1–V5 | current, desired | nominal; disc dark, textured, low contrast | 160 |
 | confirmatory | 1–32 | V1–V5 | current, desired | as pilot | 1 280 |
 | sweep | 1–32 | V2, V3, V5 | current, desired | dark at 15, 25, 35, 45 % | 768 |
 | replication | 1–32 | V2, V3, V5 | desired | dark 7 % on a second texture | 96 |
 
-Wall time = runs × 600 × $t_{\text{iter}}$ / JOBS. The pilot logs
-$t_{\text{iter}}$; at 0.3 s and three parallel jobs the confirmatory design
-takes about 21 h, at 0.1 s about 7 h. If too long, drop weightings from the
-confirmatory design after the pilot (`CONF_WEIGHTINGS`), never poses.
+Measured: 155 s per run of 600 passes with four runs in parallel on four
+cores, so about 14 h for the confirmatory design and 8 h for the sweep. If
+that is too long, drop weightings from the confirmatory design after the
+pilot (`CONF_WEIGHTINGS`), never poses.
 
 **Second texture.** A single texture is a threat to external validity that a
 reviewer will raise. Choose a texture of different statistics (e.g. a
@@ -143,10 +141,14 @@ on it.
 
 ## 5. Metrics (per run, `analysis/analyze.py`)
 
-- final translation and rotation error: median over the last 50 iterations of
-  $\lVert\Delta\mathbf t\rVert$ (mm) and $\lVert\Delta\boldsymbol\theta\mathbf u\rVert$ (deg) of the relative pose ${}^{c^*}\mathbf M_c$;
-- success: final errors below 1 mm and 0.5° (the accuracy class quoted in
-  §4.7.1), with ECDFs reported so that no conclusion depends on the threshold;
+- final camera-centre error and rotation error: median over the last 50
+  iterations of $\lVert\Delta\mathbf t\rVert$ (mm) and $\lVert\Delta\boldsymbol\theta\mathbf u\rVert$ (deg) of the relative pose ${}^{c^*}\mathbf M_c$.
+  The thesis' target-frame translation is logged and reported alongside, for
+  continuity, but it is not an outcome: it is about $Z\theta$ smaller than the
+  camera's position error (`VALIDATION.md` F4);
+- success: thresholds on both errors, fixed after the pilot in the
+  pre-registration (provisionally 20 mm and 1°), with ECDFs reported so that
+  no conclusion depends on the threshold;
 - iterations until $\lVert\mathbf v\rVert<10^{-3}$ m/s; terminal jitter (s.d. of
   $\lVert\Delta\mathbf t\rVert$ over the last 100 iterations);
 - tail slope of $\log\lVert\Delta\mathbf t\rVert$ against $\log k$ over $k\ge200$;
@@ -187,14 +189,10 @@ declares a null effect equivalent, recovers the $-1/2$ tail slope and a
 
 ## 7. Prerequisites in the code, in order
 
-1. Fix the shadowed options in `init()` and guard all display and `vpPlot`
-   calls (`ch5_which_code_and_patch.md` §1, `cpp/INTEGRATION.md` Edit 1).
-2. Integrate `cpp/campaign.h` (Edits 2–7).
-3. `run_campaign.sh validate` with the thesis pixel order: Tables 4.1–4.2
-   must be reproduced to the printed digits. Stop if not.
-4. Switch to the corrected principal point (`-x 1`) and record its effect at
-   pose 0; this is an erratum for Chapters 3–4.
-5. Commit the program that produces the results, tagged.
+Done (`VALIDATION.md`): `cpp/herpvs_campaign.cpp` reproduces the thesis
+program to every printed digit and the thesis tables to within the
+differences documented there; the principal-point erratum is measured.
+Remaining: tag the revision that produces the confirmatory results.
 
 ## 8. Paper outline and word budget
 
@@ -257,7 +255,8 @@ Changes from the pilot, with reasons:
 | `tools/make_poses.py` | stratified initial poses with coverage check | tested |
 | `tools/make_occluders.py` | occluded textures; coverage from the mask | tested on a synthetic texture |
 | `cpp/campaign.h` | weightings V1–V5, pose loading, pixel convention, logging, maps | 23 checks pass against ViSP 3.6.0 |
-| `cpp/INTEGRATION.md` | edits to `tutorial-viewer15.cpp` | needs viewer15 for an exact patch |
+| `cpp/herpvs_campaign.cpp` | the thesis program as a campaign program; builds on stock ViSP | reproduces the thesis program digit for digit |
+| `cpp/INTEGRATION.md` | how the thesis program was adapted, for patching other versions | reference |
 | `campaign/run_campaign.sh` | resumable, parallel runner | dry-run tested |
 | `campaign/poses*.csv` | confirmatory, pilot and Chapter 5 pose sets | generated |
 | `analysis/analyze.py` | metrics, paired statistics, report, LaTeX, figures | verified by `selftest.py` |

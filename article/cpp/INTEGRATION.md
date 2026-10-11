@@ -1,10 +1,9 @@
 # Integrating `campaign.h` into `tutorial-viewer15.cpp`
 
-`viewer15` is not in the repository, so the insertion points below are given
-against the structure shared by every program on this branch (`Ihermite()`,
-`Idhermite()`, `init()`, the `do { … } while` servo loop) and against the
-Chapter 5 edits in `ch5_which_code_and_patch.md`. Upload `viewer15` and the
-customised `vpFeatureLuminance` to get an exact patch instead.
+**Superseded for the campaign by `herpvs_campaign.cpp`**, which applies these
+edits to the thesis program and is verified against it digit for digit
+(`../VALIDATION.md`). This guide remains for patching another version of the
+thesis program, e.g. for Chapter 5.
 
 `campaign.h` is header-only and depends on ViSP core. It was compiled and
 tested against ViSP 3.6.0 (`test_campaign.cpp`: 23 checks).

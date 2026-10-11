@@ -11,8 +11,10 @@ a Markdown report and figures.
 Statistical plan (fixed before the confirmatory runs; see PLAN.md):
   unit          initial pose; every comparison is paired over the poses
                 common to both weightings within one (interaction, scenario)
-  outcomes      final translation error (mm) and rotation error (deg), each
-                the median over the last K iterations
+  outcomes      final camera-centre position error (mm, from cdMc) and
+                rotation error (deg), each the median over the last K
+                iterations; the thesis' target-frame translation is reported
+                alongside (final_tobj_mm) but is not an outcome
   effect        Hodges-Lehmann estimate of the median log-ratio A/B,
                 back-transformed, with its exact distribution-free CI
   test          Wilcoxon signed-rank (exact when possible), two-sided
@@ -88,7 +90,9 @@ def tail_slope(it, y, start):
 
 def run_metrics(meta, df, k_final, slope_start, t_thr, r_thr, v_thr):
     it = df["iter"].to_numpy(float)
-    t = np.sqrt(df["tx"] ** 2 + df["ty"] ** 2 + df["tz"] ** 2).to_numpy() * 1e3          # mm
+    t = np.sqrt(df["tx"] ** 2 + df["ty"] ** 2 + df["tz"] ** 2).to_numpy() * 1e3          # mm, camera centre
+    has_o = "ox" in df.columns
+    to = (np.sqrt(df["ox"] ** 2 + df["oy"] ** 2 + df["oz"] ** 2).to_numpy() * 1e3) if has_o else np.full(len(df), np.nan)
     r = np.degrees(np.sqrt(df["tux"] ** 2 + df["tuy"] ** 2 + df["tuz"] ** 2).to_numpy())  # deg
     v = np.sqrt(df["vx"] ** 2 + df["vy"] ** 2 + df["vz"] ** 2).to_numpy()                 # m/s
     k = min(k_final, len(df))
@@ -107,6 +111,7 @@ def run_metrics(meta, df, k_final, slope_start, t_thr, r_thr, v_thr):
         "n_iter": int(len(df)),
         "final_t_mm": ft,
         "final_r_deg": fr,
+        "final_tobj_mm": float(np.median(to[-k:])),   # thesis convention, target origin
         "last_t_mm": float(t[-1]),
         "last_r_deg": float(r[-1]),
         "final_e2": float(np.median(df["e2"].to_numpy()[-k:])),
@@ -333,8 +338,9 @@ def main(argv=None):
     ap.add_argument("--out", default="results")
     ap.add_argument("--k-final", type=int, default=50)
     ap.add_argument("--slope-start", type=int, default=200)
-    ap.add_argument("--t-thr", type=float, default=1.0, help="success: translation (mm)")
-    ap.add_argument("--r-thr", type=float, default=0.5, help="success: rotation (deg)")
+    ap.add_argument("--t-thr", type=float, default=20.0,
+                    help="success: camera-centre error (mm); fix after the pilot")
+    ap.add_argument("--r-thr", type=float, default=1.0, help="success: rotation (deg); fix after the pilot")
     ap.add_argument("--v-thr", type=float, default=1e-3, help="convergence: ||v|| (m/s)")
     ap.add_argument("--primary", default=DEFAULT_PRIMARY,
                     help="comma-separated interaction:scenario:A:B entries of the primary family")

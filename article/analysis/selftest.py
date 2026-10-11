@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-COLS = ("iter,tx,ty,tz,tux,tuy,tuz,vx,vy,vz,wx,wy,wz,e2,eI2,lambda,mu,h_min,h_trace,scale,gamma,"
+COLS = ("iter,tx,ty,tz,tux,tuy,tuz,ox,oy,oz,vx,vy,vz,wx,wy,wz,e2,eI2,lambda,mu,h_min,h_trace,scale,gamma,"
         "mean_w,frac_w01,frac_w25,frac_w25_c0,frac_w25_c1,frac_w25_c2,frac_w25_c3,dW,t_weight_ms,t_iter_ms")
 
 
@@ -47,11 +47,12 @@ def write_run(path, meta, k, t_mm, r_deg, rng):
     v = np.gradient(tt, axis=0) / 0.04
     data = np.zeros((n, len(COLS.split(","))))
     data[:, 0] = k
-    data[:, 1:4], data[:, 4:7], data[:, 7:10] = tt, rr, v
-    data[:, 13] = 1e7 * (1 + t_mm)                 # e2: not monotone with accuracy
-    data[:, 17], data[:, 18] = 1e3, 6e3            # h_min, h_trace
-    data[:, 23] = 0.1
-    data[:, 28] = 1e-4
+    c = {name: i for i, name in enumerate(COLS.split(","))}
+    data[:, 1:4], data[:, 4:7], data[:, 7:10], data[:, 10:13] = tt, rr, tt * 0.1, v
+    data[:, c["e2"]] = 1e7 * (1 + t_mm)            # e2: not monotone with accuracy
+    data[:, c["h_min"]], data[:, c["h_trace"]] = 1e3, 6e3
+    data[:, c["frac_w25"]] = 0.1
+    data[:, c["dW"]] = 1e-4
     with open(path, "w") as fh:
         for kk, vv in meta.items():
             fh.write(f"# {kk}={vv}\n")

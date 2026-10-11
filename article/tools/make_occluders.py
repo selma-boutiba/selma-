@@ -14,6 +14,8 @@ Subcommands
   measure   derive the mask of an existing occluded texture from its clean
             counterpart and report coverage at the desired pose, the
             Chapter 4 pose and every pose of a pose file
+  refill    keep the geometry of an existing occluder and change its
+            appearance (dark, bright, low contrast, textured)
 
 Occluder kinds
   uniform_dark    grey level 0 (the configuration of Chapter 4)
@@ -182,14 +184,43 @@ def cmd_generate(args):
     report(mask, args.poses)
 
 
+def hull_mask(clean, occ, threshold=10.0):
+    """Mask of a convex occluder: filled convex hull of the largest region
+    where the two textures differ. Robust where the covered texture is
+    itself dark, which a plain threshold on the difference is not."""
+    from matplotlib.path import Path
+    from scipy import ndimage
+    from scipy.spatial import ConvexHull
+    d = np.abs(occ - clean) > threshold
+    lab, n = ndimage.label(d)
+    if n == 0:
+        sys.exit("the textures do not differ")
+    sizes = ndimage.sum(d, lab, range(1, n + 1))
+    ys, xs = np.nonzero(lab == 1 + int(np.argmax(sizes)))
+    pts = np.c_[xs, ys]
+    hull = Path(pts[ConvexHull(pts).vertices])
+    yy, xx = np.mgrid[0:clean.shape[0], 0:clean.shape[1]]
+    return hull.contains_points(np.c_[xx.ravel(), yy.ravel()], radius=0.5).reshape(clean.shape)
+
+
+def cmd_refill(args):
+    clean, occ = load_grey(args.clean), load_grey(args.occluded)
+    mask = hull_mask(clean, occ, args.threshold)
+    os.makedirs(args.out_dir, exist_ok=True)
+    for kind in args.kinds.split(","):
+        out = fill(clean, mask, kind)
+        stem = f"{kind}_{args.tag}"
+        Image.fromarray(np.clip(out, 0, 255).astype(np.uint8)).save(os.path.join(args.out_dir, stem + ".png"))
+        print(f"{stem}.png written")
+    Image.fromarray((mask * 255).astype(np.uint8)).save(os.path.join(args.out_dir, f"mask_{args.tag}.png"))
+    report(mask, args.poses)
+
+
 def cmd_measure(args):
     clean, occ = load_grey(args.clean), load_grey(args.occluded)
     if clean.shape != occ.shape:
         sys.exit("clean and occluded textures differ in size")
-    mask = np.abs(occ - clean) > args.threshold
-    # keep the largest connected component's bounding region: JPEG noise
-    # leaves isolated pixels above threshold
-    mask = morph(morph(mask, 1, False), 1, True)
+    mask = hull_mask(clean, occ, args.threshold)
     print(f"mask: {mask.sum()} texture pixels ({100 * mask.mean():.2f} % of the texture)")
     report(mask, args.poses)
 
@@ -212,10 +243,18 @@ def main(argv=None):
     m = sub.add_parser("measure")
     m.add_argument("--clean", required=True)
     m.add_argument("--occluded", required=True)
-    m.add_argument("--threshold", type=float, default=24.0)
+    m.add_argument("--threshold", type=float, default=10.0)
     m.add_argument("--poses", default=None)
+    f = sub.add_parser("refill", help="same occluder geometry, other appearances")
+    f.add_argument("--clean", required=True)
+    f.add_argument("--occluded", required=True)
+    f.add_argument("--kinds", default="uniform_dark,uniform_bright,low_contrast,textured")
+    f.add_argument("--tag", default="disc")
+    f.add_argument("--threshold", type=float, default=10.0)
+    f.add_argument("--out-dir", default="textures")
+    f.add_argument("--poses", default=None)
     args = ap.parse_args(argv)
-    return cmd_generate(args) if args.cmd == "generate" else cmd_measure(args)
+    return {"generate": cmd_generate, "measure": cmd_measure, "refill": cmd_refill}[args.cmd](args)
 
 
 if __name__ == "__main__":

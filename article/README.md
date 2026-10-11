@@ -1,17 +1,26 @@
 # Article: robust weighting in photometric visual servoing — simulation study
 
-`PLAN.md` is the study plan: decision rule, hypotheses, design, statistics,
-outline and timeline. Quick start:
+- `PLAN.md` — study plan: decision rule, hypotheses, design, statistics, outline.
+- `VALIDATION.md` — reproduction of Chapter 4 with the thesis program, and the
+  findings it produced (occluder coverage, translation metric, principal point).
+
+Quick start (textures are not in the repository; copy the thesis' `peppers.jpg`
+and `peppers_o_b.jpg` beside this file):
 
 ```bash
-python3 tools/make_poses.py --check-chapter4                      # 40.0 / 65.0 px
-python3 tools/make_occluders.py generate --texture peppers.jpg --kind uniform_dark \
-        --fraction 0.07 --out-dir campaign/textures
-cmake -S cpp -B build && cmake --build build && ./build/test_campaign campaign/poses.csv
-BIN=./viewer15 JOBS=3 campaign/run_campaign.sh validate           # after cpp/INTEGRATION.md
-BIN=./viewer15 JOBS=3 campaign/run_campaign.sh pilot
+cmake -S cpp -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j
+./build/test_campaign campaign/poses.csv                          # unit checks
+python3 tools/make_occluders.py refill --clean peppers.jpg --occluded peppers_o_b.jpg \
+        --out-dir campaign/textures                               # occluded scenarios
+cp peppers_o_b.jpg campaign/textures/ch4_disc.jpg
+BIN=build/herpvs_campaign REF=peppers.jpg TEX=campaign/textures JOBS=4 \
+    campaign/run_campaign.sh validate                             # Chapter 4 pose, thesis conventions
+BIN=build/herpvs_campaign REF=peppers.jpg TEX=campaign/textures JOBS=4 \
+    campaign/run_campaign.sh pilot
 python3 analysis/analyze.py campaign/runs/pilot/logs --poses campaign/poses_pilot.csv --out results/pilot
 python3 analysis/selftest.py                                       # pipeline check on synthetic data
 ```
 
-Python: numpy, scipy, pandas, matplotlib, pillow. C++: ViSP ≥ 3.6 (core).
+`build/herpvs_campaign -h` lists the options. It needs ViSP ≥ 3.3 (core, io,
+robot) and no modified ViSP class. Python: numpy, scipy, pandas, matplotlib,
+pillow.

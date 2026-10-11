@@ -153,9 +153,13 @@ inline bool loadPose(const std::string &file, int id, vpHomogeneousMatrix &cMo)
   return true;
 }
 
-// Pose error as the relative transformation cdMc, which is the quantity
-// a pose error should be (the component-wise difference of two pose
-// vectors is not a pose). Translation in metres, theta*u in radians.
+// Pose error as the relative transformation cdMc: the position of the
+// camera centre in the desired camera frame (m) and theta*u (rad). This is
+// the camera's positioning error. The thesis tables report instead
+// t(cMo) - t(cdMo), the target origin seen from the camera, which hardly
+// changes when the camera rotates about the target: for a residual
+// rotation theta at depth Z the camera centre is about Z * theta away
+// while that difference stays small. Both are logged (IterationRecord).
 inline vpPoseVector poseError(const vpHomogeneousMatrix &cdMo, const vpHomogeneousMatrix &cMo)
 {
   return vpPoseVector(cdMo * cMo.inverse());
@@ -302,7 +306,9 @@ private:
 // ---------------------------------------------------------------------
 struct IterationRecord {
   int iter = 0;
-  vpPoseVector poseErr;   // cdMc: t (m), theta*u (rad)
+  vpPoseVector poseErr;   // cdMc: camera-centre position (m) and theta*u (rad)
+  double tTarget[3] = {0, 0, 0}; // t(cMo) - t(cdMo): target origin in the camera
+                                 // frame (m), the translation the thesis tables report
   vpColVector v;          // commanded velocity (6)
   double e2 = 0, eI2 = 0; // ||e||^2, ||e_I||^2
   double lambda = 0, mu = 0;
@@ -331,7 +337,7 @@ public:
          << "# gmin=" << o.gMin << "\n"
          << "# pixel_order=" << (o.pixelOrder == 1 ? "corrected" : "thesis") << "\n";
     if (!extraHeader.empty()) out_ << extraHeader;
-    out_ << "iter,tx,ty,tz,tux,tuy,tuz,vx,vy,vz,wx,wy,wz,e2,eI2,lambda,mu,h_min,h_trace,"
+    out_ << "iter,tx,ty,tz,tux,tuy,tuz,ox,oy,oz,vx,vy,vz,wx,wy,wz,e2,eI2,lambda,mu,h_min,h_trace,"
             "scale,gamma,mean_w,frac_w01,frac_w25,frac_w25_c0,frac_w25_c1,frac_w25_c2,"
             "frac_w25_c3,dW,t_weight_ms,t_iter_ms\n";
     out_.precision(10);
@@ -369,6 +375,7 @@ public:
     if (!out_) return;
     out_ << r.iter;
     for (unsigned int i = 0; i < 6; i++) out_ << ',' << r.poseErr[i];
+    for (unsigned int i = 0; i < 3; i++) out_ << ',' << r.tTarget[i];
     for (unsigned int i = 0; i < 6; i++) out_ << ',' << (r.v.getRows() == 6 ? r.v[i] : 0.0);
     out_ << ',' << r.e2 << ',' << r.eI2 << ',' << r.lambda << ',' << r.mu << ',' << r.hMin << ',' << r.hTrace
          << ',' << r.scale << ',' << r.gamma << ',' << r.meanW << ',' << r.fracW01 << ',' << r.fracW25;

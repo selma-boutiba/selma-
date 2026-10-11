@@ -30,12 +30,12 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 
 WEIGHTINGS="1 2 3 4 5"         # none tukey hermite penalised adaptive
 INTERACTIONS="0 1"             # current desired
-SCENARIOS="nominal uniform_dark_f070 textured_f070 low_contrast_f070"
+SCENARIOS=${SCENARIOS:-"nominal uniform_dark_disc textured_disc low_contrast_disc"}   # make_occluders.py refill
 
 case "$DESIGN" in
   validate)      # reproduction of Chapter 4: pose 0, thesis pixel order
     POSES=""; IDS="0"; WEIGHTINGS="1 2 3"; INTERACTIONS="0"
-    SCENARIOS="nominal ${OCCLUDED_CH4:-peppers_o_b}"; PIX=0 ;;
+    SCENARIOS="nominal ch4_disc"; PIX=0 ;;   # ch4_disc: the thesis' occluded texture, in $TEX
   pilot)
     POSES="$HERE/poses_pilot.csv"; IDS="101 102 103 104" ;;
   confirmatory)
@@ -53,7 +53,7 @@ mkdir -p "$DIR/logs" "$DIR/console"
 servo_texture() {
   if [ "$1" = nominal ]; then echo "$REF"
   elif [ -f "$TEX/$1.png" ]; then echo "$TEX/$1.png"
-  elif [ -f "$1.jpg" ]; then echo "$1.jpg"
+  elif [ -f "$TEX/$1.jpg" ]; then echo "$TEX/$1.jpg"
   else echo "missing texture for scenario $1" >&2; return 1; fi
 }
 
