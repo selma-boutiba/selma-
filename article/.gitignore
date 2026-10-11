@@ -1,0 +1,7 @@
+# campaign outputs and builds
+campaign/runs/
+campaign/textures/
+results/
+build/
+__pycache__/
+*.part
