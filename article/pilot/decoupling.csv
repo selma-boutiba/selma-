@@ -1,0 +1,9 @@
+interaction,scenario,n,median_tau,frac_negative
+current,low_contrast_disc,4,-0.1,0.5
+current,nominal,4,0.7,0.0
+current,textured_disc,4,0.0,0.5
+current,uniform_dark_disc,4,0.19999999999999998,0.25
+desired,low_contrast_disc,4,-0.19999999999999998,1.0
+desired,nominal,4,0.7,0.0
+desired,textured_disc,4,-0.39999999999999997,1.0
+desired,uniform_dark_disc,4,-0.39999999999999997,1.0

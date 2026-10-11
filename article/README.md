@@ -3,6 +3,9 @@
 - `PLAN.md` — study plan: decision rule, hypotheses, design, statistics, outline.
 - `VALIDATION.md` — reproduction of Chapter 4 with the thesis program, and the
   findings it produced (occluder coverage, translation metric, principal point).
+- `PILOT.md` — results of the 160-run pilot (development set); outputs in `pilot/`.
+- `PREREGISTRATION.md` — hypotheses and decision rule for the confirmatory
+  campaign (draft until approved).
 
 Quick start (textures are not in the repository; copy the thesis' `peppers.jpg`
 and `peppers_o_b.jpg` beside this file):

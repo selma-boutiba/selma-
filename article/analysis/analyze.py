@@ -236,7 +236,7 @@ def setup_mpl():
 def fig_ecdf(plt, runs, path, title):
     fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.4), constrained_layout=True)
     for ax, col, xl in zip(axes, ["final_t_mm", "final_r_deg"],
-                           ["final translation error (mm)", "final rotation error (deg)"]):
+                           ["final camera-centre error (mm)", "final rotation error (deg)"]):
         for w in WEIGHTINGS:
             x = np.sort(runs.loc[runs.weighting == w, col].to_numpy(float))
             if len(x) == 0:
@@ -276,8 +276,8 @@ def fig_curves(plt, logs, path, title, col="t"):
     ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: f"{y:g}"))
     ax.yaxis.set_minor_formatter(FuncFormatter(lambda y, _: ""))
     ax.set_xlabel("iteration")
-    ax.set_ylabel("translation error (mm)" if col == "t" else "rotation error (deg)")
-    ax.legend(frameon=False, loc="upper right")
+    ax.set_ylabel("camera-centre error (mm)" if col == "t" else "rotation error (deg)")
+    ax.legend(frameon=False, loc="lower left", fontsize=6)
     ax.set_title(title)
     fig.savefig(path)
     plt.close(fig)
