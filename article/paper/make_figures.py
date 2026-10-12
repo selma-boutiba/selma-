@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Figures of the manuscript, from the committed campaign outputs.
 
-  python3 paper/make_figures.py --scratch <dir>
+  python3 paper/make_figures.py [--textures textures] [--logs runs/confirmatory/logs]
 
-<dir> holds the per-run logs (runs/<design>/logs) and the textures
-(campaign_tex/, campaign_tex2/); only Figs. 1 and 6 need it. Every other
-figure is drawn from confirmatory/, replication/ and sweep/.
+Fig. 1 needs the textures made by tools/make_textures.sh, and the
+convergence-curve figure the per-run logs of the confirmatory campaign; each
+is skipped if its input is missing. Every other figure is drawn from the
+committed outputs in confirmatory/, replication/ and sweep/.
 
   fig_scenes.pdf   occluder geometry on the target; second texture
   fig_maps.pdf     copy of replication/figures/diag_maps_pose1.pdf
@@ -38,10 +39,9 @@ INK, INK2, GRID = "#0b0b0b", "#52514e", "#e4e3df"
 W4 = ["none", "tukey", "hermite", "penalised"]
 
 
-def fig_scenes(plt, scratch):
+def fig_scenes(plt, tex):
     """(a) occluder outlines in target coordinates; (b, c) the second texture."""
     from skimage import measure
-    tex = os.path.join(scratch, "campaign_tex")
     fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.25), constrained_layout=True,
                              gridspec_kw={"width_ratios": [1.0, 1.0, 1.0]})
     ax = axes[0]
@@ -66,9 +66,9 @@ def fig_scenes(plt, scratch):
     ax.set_ylabel("Y (m)")
     ax.set_title("(a) occluders on the target")
     ax.grid(False)
-    for a, f, t in ((axes[1], "campaign_tex2/coffee.png", "(b) second texture"),
-                    (axes[2], "campaign_tex2/coffee_dark_disc.png", "(c) with the dark disc")):
-        a.imshow(np.asarray(Image.open(os.path.join(scratch, f)).convert("L")), cmap="gray", vmin=0, vmax=255,
+    for a, f, t in ((axes[1], "coffee.png", "(b) second texture"),
+                    (axes[2], "coffee_dark_disc.png", "(c) with the dark disc")):
+        a.imshow(np.asarray(Image.open(os.path.join(tex, f)).convert("L")), cmap="gray", vmin=0, vmax=255,
                  extent=(-hx, hx, hy, -hy))
         a.set_title(t)
         a.set_xticks([])
@@ -177,8 +177,7 @@ def fig_basin(plt):
     plt.close(fig)
 
 
-def fig_curves(plt, scratch):
-    logdir = os.path.join(scratch, "runs", "confirmatory", "logs")
+def fig_curves(plt, logdir):
     fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.5), constrained_layout=True, sharey=True)
     for ax, scen, title in zip(axes, ["nominal", "uniform_dark_disc"], ["clean scene", "dark disc (7.5 %)"]):
         for w, wid in zip(W4, ["1", "2", "3", "4"]):
@@ -237,7 +236,8 @@ def fig_budget(plt):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--scratch", default=None)
+    ap.add_argument("--textures", default=os.path.join(ROOT, "textures"))
+    ap.add_argument("--logs", default=os.path.join(ROOT, "runs", "confirmatory", "logs"))
     args = ap.parse_args(argv)
     os.makedirs(OUT, exist_ok=True)
     plt = an.setup_mpl()
@@ -247,9 +247,14 @@ def main(argv=None):
     fig_forest(plt)
     fig_basin(plt)
     fig_budget(plt)
-    if args.scratch:
-        fig_scenes(plt, args.scratch)
-        fig_curves(plt, args.scratch)
+    if os.path.exists(os.path.join(args.textures, "coffee_dark_disc.png")):
+        fig_scenes(plt, args.textures)
+    else:
+        print(f"fig_scenes skipped: no textures in {args.textures} (tools/make_textures.sh)")
+    if glob.glob(os.path.join(args.logs, "L1_nominal_w1_p*.csv")):
+        fig_curves(plt, args.logs)
+    else:
+        print(f"fig_curves skipped: no confirmatory logs in {args.logs}")
 
 
 if __name__ == "__main__":

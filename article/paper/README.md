@@ -13,7 +13,7 @@ Draft for *Robotics and Autonomous Systems* (Elsevier, `elsarticle`).
 Build:
 
 ```bash
-python3 paper/make_figures.py --scratch <dir with runs/ and campaign_tex*/>   # Figs. 1 and 5 need the logs
+python3 paper/make_figures.py   # Fig. 1 needs textures/ (tools/make_textures.sh); the curves need runs/confirmatory/logs
 cd paper && latexmk -pdf main.tex
 ```
 

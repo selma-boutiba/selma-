@@ -7,3 +7,8 @@ __pycache__/
 *.part
 test_log.csv
 test_map_*
+# local inputs and outputs of RUN_ON_YOUR_PC.md
+textures/
+runs/
+.venv/
+one_run.csv

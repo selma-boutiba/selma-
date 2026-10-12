@@ -1,0 +1,7 @@
+# Python packages for tools/, analysis/ and paper/ (versions used for the reported results)
+numpy>=1.24          # 2.4.6
+scipy>=1.10          # 1.17.1
+pandas>=2.0          # 3.0.6
+matplotlib>=3.7      # 3.11.2
+pillow>=9.0          # 12.3.0
+scikit-image>=0.21   # 0.26.0  (second texture, figure contours)

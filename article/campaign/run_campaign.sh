@@ -2,15 +2,15 @@
 # =====================================================================
 #  run_campaign.sh -- run one design of the simulation campaign.
 #
-#  Usage:   ./run_campaign.sh pilot|confirmatory|replication|sweep|validate
-#  Environment (defaults in brackets):
-#    BIN     servoing program built with campaign.h            [./viewer15]
-#    JOBS    runs in parallel; at most the number of cores     [3]
-#    NITER   iteration cap                                      [600]
-#    REF     clean texture (reference image)                    [peppers.jpg]
-#    TEX     directory of occluded textures (make_occluders.py) [textures]
-#    OUT     output root                                        [runs]
-#    PIX     1 corrected principal point, 0 thesis convention   [1]
+#  Usage:   campaign/run_campaign.sh pilot|confirmatory|replication|sweep|validate
+#  Environment (defaults in brackets; <root> is the directory above campaign/):
+#    BIN     servoing program                         [<root>/build/herpvs_campaign]
+#    JOBS    runs in parallel; at most the number of cores           [3]
+#    NITER   iteration cap                                            [600]
+#    TEX     texture directory (tools/make_textures.sh)               [<root>/textures]
+#    REF     clean texture (reference image)   [$TEX/peppers.jpg; coffee.png for replication]
+#    OUT     output root                                              [<root>/runs]
+#    PIX     1 corrected principal point, 0 thesis convention         [1]
 #
 #  Resumable: a run whose log already has NITER data rows is skipped, so
 #  the script can be interrupted and restarted. Each run writes its log
@@ -19,14 +19,17 @@
 set -euo pipefail
 
 DESIGN=${1:?usage: run_campaign.sh pilot|confirmatory|replication|sweep|validate}
-BIN=${BIN:-./viewer15}
+HERE=$(cd "$(dirname "$0")" && pwd)
+ROOT=$(dirname "$HERE")
+BIN=${BIN:-$ROOT/build/herpvs_campaign}
 JOBS=${JOBS:-3}
 NITER=${NITER:-600}
-REF=${REF:-peppers.jpg}
-TEX=${TEX:-textures}
-OUT=${OUT:-runs}
+TEX=${TEX:-$ROOT/textures}
+if [ "$DESIGN" = replication ]; then REF=${REF:-$TEX/coffee.png}; else REF=${REF:-$TEX/peppers.jpg}; fi
+OUT=${OUT:-$ROOT/runs}
 PIX=${PIX:-1}
-HERE=$(cd "$(dirname "$0")" && pwd)
+[ -x "$BIN" ] || { echo "program not found: $BIN (build it first, or set BIN)" >&2; exit 1; }
+[ -f "$REF" ] || { echo "reference texture not found: $REF (run tools/make_textures.sh, or set REF)" >&2; exit 1; }
 
 WEIGHTINGS="1 2 3 4 5"         # none tukey hermite penalised adaptive
 INTERACTIONS="0 1"             # current desired
@@ -40,7 +43,7 @@ case "$DESIGN" in
     POSES="$HERE/poses_pilot.csv"; IDS="101 102 103 104" ;;
   confirmatory)
     POSES="$HERE/poses.csv"; IDS=$(seq 1 32)
-    WEIGHTINGS=${CONF_WEIGHTINGS:-$WEIGHTINGS} ;;
+    WEIGHTINGS=${CONF_WEIGHTINGS:-"1 2 3 4"} ;;   # V1-V4, as pre-registered (V5 dropped after the pilot)
   replication)   # second texture: REF=coffee.png, TEX holding coffee_dark_disc (PREREGISTRATION_ADDENDUM.md)
     POSES="$HERE/poses.csv"; IDS=$(seq 1 32); WEIGHTINGS="2 3"
     SCENARIOS="nominal coffee_dark_disc" ;;
