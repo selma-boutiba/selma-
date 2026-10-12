@@ -1,0 +1,8 @@
+run,weighting,interaction,start,t_mm_pass100,t_mm_pass600,r_deg_pass600,drift_last50_mm,tx_mm,ty_mm,tz_mm,thx_deg,thy_deg,thz_deg,e2_final,frac_w25_final
+V1_Ld_from_desired,none,desired,desired pose,8.223,35.42,1.551,2.025,31.02,16.79,3.138,0.7411,-1.34,-0.2517,3.985e+10,0
+V2_Ld_from_desired,tukey,desired,desired pose,2.021,8.458,0.3674,0.4893,2.118,8.155,0.7394,0.3524,-0.08977,-0.05186,3.976e+10,0.07667
+V3_Ld_from_desired,hermite,desired,desired pose,1.665,5.977,0.2587,0.252,2.098,5.585,0.3583,0.24,-0.08963,-0.03611,3.975e+10,0.1815
+V2_Lc_from_desired,tukey,current,desired pose,2.103,8.689,0.3769,0.4891,2.074,8.406,0.7367,0.3636,-0.08828,-0.04567,3.976e+10,0.07667
+V1_Ld_p1,none,desired,pose 1,75.84,78.06,3.411,-0.0002117,70.64,32.38,7.415,1.44,-3.068,-0.3839,4.018e+10,0
+V2_Ld_p1,tukey,desired,pose 1,83.33,174.8,7.684,0.3281,-19.56,171.3,28.54,7.633,0.8793,-0.1017,4.623e+10,0.1297
+V3_Ld_p1,hermite,desired,pose 1,8.361,8.36,0.3626,4.101e-05,3.608,7.53,0.4154,0.3254,-0.1553,-0.03868,3.975e+10,0.1819

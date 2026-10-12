@@ -101,18 +101,184 @@ ones.
    dark disc), V3 reduces the camera-centre and rotation error by about 37 % when
    both converge, at the price of more failures at large displacement.
 
-## 6. What the article can claim
+## 6. Replication on a second texture
+
+**Pre-registration.** `PREREGISTRATION_ADDENDUM.md` §R, committed at `418f24c`
+before the first run.
+
+**Runs.** 256 runs, all complete: 32 poses × V2, V3 × two interaction matrices
+× two scenes (clean coffee, and coffee with the Chapter 4 disc filled dark).
+
+**Analysis.** The pre-registered command; outputs in `replication/`.
+
+### 6.1 Pre-registered result
+
+| Test | Comparison | Result | Verdict |
+|---|---|---|---|
+| R1a | V3/V2 camera-centre error, desired-image $\mathbf L$, coffee disc | no pose where both succeed (V2: 0 of 32) | not computable |
+| R1b | V3/V2 rotation error, same cell | same | not computable |
+
+**Pre-registered verdict: not replicated.** The criterion needs both tests to be
+significant. Neither can be computed, because V2 fails at every pose. V2 is the
+scheme that fails, not V3.
+
+### 6.2 Secondary (pre-registered, Holm within the family)
+
+Success out of 32 poses:
+
+| $\mathbf L$ from | Scene | V2 | V3 | V3-only / V2-only | p (Holm) |
+|---|---|---|---|---|---|
+| current image | clean | 32 | 30 | 0 / 2 | 0.50 |
+| current image | disc | **0** | **24** | 24 / 0 | $3.6\times10^{-7}$ |
+| desired image | clean | 31 | 24 | 1 / 8 | 0.078 |
+| desired image | disc | **0** | **28** | 28 / 0 | $3.0\times10^{-8}$ |
+
+Final errors, as camera-centre error / rotation error. V2 is the median over
+all 32 poses; V3 is the median over its successful runs:
+
+| $\mathbf L$ from | Scene | V2 | V3 |
+|---|---|---|---|
+| current image | clean | 10.0 mm / 0.440° | 8.57 mm / 0.377° |
+| current image | disc | 128.1 mm / 5.62° (every pose) | 6.63 mm / 0.298° |
+| desired image | clean | 9.97 mm / 0.438° | 8.71 mm / 0.383° |
+| desired image | disc | 174.8 mm / 7.69° (every pose) | 8.36 mm / 0.363° |
+
+**Clean-scene accuracy where both succeed (V3/V2).**
+
+| $\mathbf L$ from | Ratio [95 % CI] | n | p (Holm) |
+|---|---|---|---|
+| current image | 0.79 [0.64, 0.94] | 30 | 0.30 |
+| desired image | 0.94 [0.79, 1.09] | 23 | 0.30 |
+
+On the thesis texture the same ratios were 0.69–0.74.
+
+**V3's failures.** All have a rotation error of 4–54°, except one near miss
+at 23 mm / 1.01°.
+- Current-image $\mathbf L$: 8 with the disc and 2 on the clean scene, all in
+  bins 2–3.
+- Desired-image $\mathbf L$: 4 with the disc and 8 on the clean scene, in
+  bins 1–3.
+
+The rank margin stays above $5.9\times10^{-6}$ in every run.
+
+### 6.3 Why V2 fails (exploratory, not pre-registered)
+
+Seven additional runs were made on coffee with the disc
+(`replication/diagnostics/`). The maps come from `analysis/diag_maps.py`.
+
+1. **It is an equilibrium, not a basin failure.**
+   - V2 ends at the same pose from every initial pose. The interquartile range
+     of the camera-centre error is 127.7–128.3 mm with the current-image
+     matrix and 174.7–174.9 mm with the desired-image matrix.
+   - From pose 1, V2 comes within 40–42 mm of the target at pass 145 and then
+     moves away.
+   - V3's successful runs also share a single final pose, with an
+     interquartile range below 0.01 mm. That pose is 6.6 mm (current) or
+     8.4 mm (desired) from the target.
+2. **The offset lies along the weakly observable direction.**
+   - With the desired-image matrix, V2's offset is
+     $\Delta\mathbf t=(-19.6,\,171.3,\,28.5)$ mm and
+     $\theta\mathbf u=(7.63,\,0.88,\,-0.10)$°. With the current-image matrix
+     it is $(-6.4,\,126.6,\,17.8)$ mm and $(5.61,\,0.29,\,-0.12)$°.
+   - In both cases this is a translation along $y$ coupled with a rotation
+     about $x$, with $\Delta t_y\approx Z^{*}\theta_x$
+     ($1.3\ \text{m}\times0.133\ \text{rad}=173$ mm).
+   - Along this direction the image of a fronto-parallel plane changes only
+     at second order.
+   - The thesis's target-frame metric reports 16.9 mm for this pose (F4),
+     against a camera-centre error of 175 mm.
+3. **The desired pose is not an equilibrium under this occlusion.**
+   - Started at the desired pose with the desired-image matrix, all schemes
+     drift along the same direction.
+   - After 600 passes, V1 is 35 mm away and still moving.
+   - V2 is 8.5 mm away, and its drift is still speeding up
+     (0.49 mm per 50 passes at the end).
+   - V3 is 6.0 mm away and slowing down, towards its 8.4 mm equilibrium.
+4. **Tukey weighting does worse than no weighting here.** From pose 1 with the
+   desired-image matrix:
+
+   | Weighting | Camera-centre error | Rotation error | Final cost |
+   |---|---|---|---|
+   | V1 | 78 mm | 3.4° | $4.02\times10^{10}$ |
+   | V2 | 175 mm | 7.7° | $4.62\times10^{10}$ |
+   | V3 | 8.4 mm | 0.36° | $3.98\times10^{10}$ |
+
+   V2's equilibrium is not a lower-cost pose. It is produced by the weights.
+5. **Mechanism** (`replication/figures/diag_maps_pose1.pdf`, desired-image
+   matrix, final pass).
+   - At V2's final pose, Tukey rejects most of the disc but keeps a curved band
+     inside it. In that band the hidden texture, the shadowed cup handle, is
+     itself dark, so the residual stays inside Tukey's acceptance region.
+   - With the desired-image matrix these measurements have non-zero
+     interaction rows. They carry the influence that remains inside the
+     occluder.
+   - V3 rejects the whole disc. Its structure measure is computed from the
+     current image, which is uniform inside the disc, so any non-zero residual
+     there is divided by the floor $G_{\min}$ and rejected.
+   - V3 therefore detects the occluder by the absence of structure, whether or
+     not its grey level happens to match the hidden texture.
+
+**Not established.**
+- With the current-image matrix, the interior of the uniform disc has zero
+  interaction rows (Proposition 1). V2's equilibrium in that case (128 mm, same
+  direction) must therefore come from the occluder's boundary band. No maps
+  were recorded for that case.
+- Why the thesis texture produces no comparable bias is also open. There the
+  low-contrast disc leaves small residuals inside the occluder too, yet V2
+  ends within 1 mm. A plausible factor, untested, is how the retained
+  measurements project onto the weakly observable direction, whose stiffness
+  is the smallest eigenvalue of $\mathbf H_{\mathbf W}$ (rank margin about
+  $10^{-5}$ in every run).
+
+### 6.4 What the replication changes
+
+- **The accuracy result (V3 at 0.66 × V2's error when both converge) is
+  established on the thesis texture only.**
+  - On coffee with the disc it cannot be tested, because V2 never converges.
+  - On the clean coffee scene the gain is smaller (0.79 and 0.94) and not
+    significant.
+- **How the occluder affects V2 depends on the texture.**
+  - Thesis texture: V2 converged at least as often as V3 (P2 not supported).
+  - Coffee with the disc: V2 converges at no pose, against 24–28 of 32 for V3.
+- **V3's residual bias under occlusion also depends on the texture:** 0.33 mm
+  on the thesis texture, 6.6–8.4 mm on coffee.
+  - The 20 mm / 1° threshold counts V3's coffee equilibrium as a success.
+  - That equilibrium is of the same size as the clean-scene error at pass 600,
+    but unlike that error it does not keep decreasing.
+- **Two failure modes now have evidence.** With the current-image matrix, V3
+  narrows the convergence domain at large displacements on both textures. On
+  the clean coffee scene with the desired-image matrix, it also fails at more
+  poses (8 against 1; not significant after Holm).
+
+## 7. Occlusion-fraction sweep
+
+Running. Pre-registered in `PREREGISTRATION_ADDENDUM.md` §S; to be reported
+here.
+
+## 8. What the article can claim
 
 1. Structure-informed Tukey weighting (V3) reduces the final positioning error
-   of robust photometric servoing by about a third against Tukey weighting,
-   with the desired-image interaction matrix (pre-registered, p_Holm = 4e-7)
-   and with the current-image matrix (secondary), under three occluder
-   appearances and on the clean scene.
+   of robust photometric servoing against Tukey weighting (V2) when both
+   converge.
+   - On the thesis texture, the reduction is about a third with the
+     desired-image interaction matrix (pre-registered, p_Holm = 4e-7) and with
+     the current-image matrix (secondary), under three occluder appearances
+     and on the clean scene.
+   - On the second texture with the dark disc, V2 converges at no pose: it
+     reaches a biased equilibrium 128–175 mm from the target, along the weakly
+     observable direction. V3 converges at 24–28 of 32 poses, to 6.6–8.4 mm
+     (pre-registered secondary, p_Holm ≤ 4e-7; the pre-registered accuracy
+     test could not be computed).
+   - V3 rejects an occluder by the absence of current-image structure, not by
+     residual magnitude (§6.3).
 2. With the current-image matrix this gain costs convergence at large initial
-   displacements; with the desired-image matrix the cost falls to 3 of 32 poses.
+   displacements, on both textures. With the desired-image matrix the cost is
+   3 of 32 poses on the thesis texture and 4–8 of 32 on the second texture.
 3. Under occlusion the final cost ranks accuracy inversely, so it cannot serve
    as a convergence criterion. The stability margin of the reweighted law holds
    throughout.
+4. Tukey weighting on residual magnitude can converge farther from the target
+   than the unweighted law. This happens when part of the occluder matches the
+   grey level of the hidden texture (exploratory; one texture, §6.3).
 
-Still needed for the article: the replication on a second texture and the
-occlusion-fraction sweep (`PLAN.md`), both secondary.
+The occlusion-fraction sweep (§7) is still to be added.
