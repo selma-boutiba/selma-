@@ -44,8 +44,10 @@ Median final errors of successful runs (camera centre / rotation):
 - **Robust weighting under occlusion (H1):** V2/V1 = 0.015 (dark and textured
   discs) and 0.06 (low contrast). The unweighted scheme converges to a biased
   pose 31–35 mm from the target.
-- **Cost of robustness on the clean scene:** V2/V1 = 2.4–2.5. V3 recovers about
-  a third of that cost; V1 remains the most accurate when nothing is occluded.
+- **Cost of robustness on the clean scene:** V2/V1 = 2.4–2.5. V3 reduces V2's
+  clean-scene error by 26–31 % (ratio 0.69–0.74) but remains 1.5–1.7 times
+  less accurate than V1, which stays the most accurate when nothing is
+  occluded.
 - **V4 against V2:** 0.90–0.93, equivalent within ±25 %. V3 against V4:
   0.40–0.74.
 
@@ -81,6 +83,25 @@ ones.
   (Kendall τ 0.83–1.0). Under occlusion with the desired-image matrix it ranks
   it inversely (τ −0.33 to −0.67, negative at 72–84 % of poses).
 - **Weight computation per pass:** V2 10.5 ms, V3 12.7 ms, V4 11.7 ms.
+- **The V3/V2 ratio depends on the iteration budget** (`analysis/budget_ratio.py`,
+  outputs `*/budget_ratio.csv`; analysis added while drafting the article).
+  - Under the dark and textured discs, the median per-pose ratio rises from
+    0.09–0.19 at iteration 100 to 0.39–0.44 at 300 and 0.62–0.64 at 600, and it
+    is still rising at the last iteration.
+  - Between iterations 300 and 600, V2 halves its error (median factor
+    0.52–0.57) while V3 reduces it by 12–15 %.
+  - The weighted runs under occlusion are therefore not stationary at 600
+    passes (median tail slopes −1.0 to −1.3 for V2, −0.25 to −0.33 for V3).
+    Only V1 reaches a stationary biased pose.
+  - On the clean scene the ratio levels off at 0.67 (desired-image matrix) and
+    0.74–0.77 (current-image matrix).
+  - The same pattern holds in every occluded cell of the sweep: at 25 % with
+    the current-image matrix, 0.15 at iteration 300 and 0.52 at 600. The larger
+    gains at larger fractions reflect, at least in part, V2's slower
+    convergence.
+  - The pre-registered outcome (error at 600 passes) is valid as defined.
+    Its reading is "V3 reaches a given accuracy sooner". Whether V3's error
+    at convergence is also smaller needs longer runs.
 
 ## 5. What these results correct
 
@@ -381,9 +402,10 @@ committed; `sweep/diagnostics/run_diag_f450.sh` regenerates them.
 
 ## 8. What the article can claim
 
-1. Structure-informed Tukey weighting (V3) reduces the final positioning error
-   of robust photometric servoing against Tukey weighting (V2) when both
-   converge.
+1. Structure-informed Tukey weighting (V3) reduces the positioning error after
+   600 passes against Tukey weighting (V2) when both converge. Under
+   occlusion the advantage is partly one of speed and shrinks with the budget
+   (§4).
    - On the thesis texture, the reduction is about a third with the
      desired-image interaction matrix (pre-registered, p_Holm = 4e-7) and with
      the current-image matrix (secondary), under three occluder appearances
@@ -395,9 +417,10 @@ committed; `sweep/diagnostics/run_diag_f450.sh` regenerates them.
      test could not be computed).
    - V3 rejects an occluder by the absence of current-image structure, not by
      residual magnitude (§6.3).
-2. When both converge, V3's accuracy gain over V2 grows with the occluded
-   fraction: V3/V2 = 0.77 at 15 %, 0.46 at 25 % and 0.36 at 35 % (family S,
-   all p_Holm ≤ 0.003).
+2. When both converge, V3's accuracy gain over V2 at 600 passes grows with the
+   occluded fraction: V3/V2 = 0.77 at 15 %, 0.46 at 25 % and 0.36 at 35 %
+   (family S, all p_Holm ≤ 0.003). This reflects at least partly V2's slower
+   convergence at large fractions (§4).
 3. Robustness to the occluded fraction depends on how the weighting is paired
    with the interaction matrix (family S).
    - V3 with the desired-image matrix converges at 84–94 % of poses up to 45 %.

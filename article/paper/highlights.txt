@@ -1,0 +1,5 @@
+- With the current-image interaction matrix, weights on untextured regions are inert
+- Structure-informed weighting reduces the error after 600 iterations by a third
+- Its advantage under occlusion is partly speed: it shrinks as the budget grows
+- The interaction matrix decides which weighting tolerates large occluders
+- Tukey weighting can settle farther from the target than no weighting at all
