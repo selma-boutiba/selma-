@@ -122,3 +122,14 @@ uses the corrected matrix.
   the floor makes no difference.
 - The cause of F2 (where the consoles were read, or a small difference in the
   first passes).
+
+## 6. Change after the study: portable build
+
+After all campaigns, `campaign.h` replaced the call to ViSP's `vpRobust` by
+`tukeyWeights()`, the same computation written out, so that the program
+builds with older ViSP versions and with Visual Studio 2015 (C++14). Rebuilt
+on the study's machine, the program reproduces the committed final lines of
+V2, V3 and V4 runs and of all six validation runs. The trajectories agree to
+ten significant digits. The only visible change is in the last printed digit
+of a rotation component of about $10^{-8}$ rad in one V2 run, a last-bit
+rounding difference between ViSP's compiled library and the inlined code.

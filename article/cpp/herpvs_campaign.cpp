@@ -38,6 +38,10 @@
 
 #include "campaign.h"
 
+#ifndef M_PI // not defined by <cmath> on MSVC without _USE_MATH_DEFINES
+#define M_PI 3.14159265358979323846
+#endif
+
 #define GETOPTARGS "cdn:w:L:r:t:P:p:o:m:x:G:F:h"
 
 namespace

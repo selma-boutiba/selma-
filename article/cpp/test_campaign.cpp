@@ -7,6 +7,15 @@
 #include <cstdio>
 #include <random>
 
+// The comparison with ViSP's own estimator needs the vpRobust interface of
+// ViSP >= 3.3; with an older ViSP those two checks are skipped.
+#if defined(VISP_VERSION_INT) && defined(VP_VERSION_INT)
+#if VISP_VERSION_INT >= VP_VERSION_INT(3, 3, 0)
+#define HAVE_VPROBUST_33
+#include <visp3/core/vpRobust.h>
+#endif
+#endif
+
 static int failures = 0;
 #define CHECK(cond, msg)                                                                                              \
   do {                                                                                                                \
@@ -56,6 +65,7 @@ int main(int argc, char **argv)
   for (unsigned int k = 0; k < N; k++) G[k] = std::fabs(nd(gen)) + 0.05;
 
   // 2. robust scale equals vpRobust's
+#ifdef HAVE_VPROBUST_33
   {
     vpColVector w;
     vpRobust r;
@@ -63,6 +73,7 @@ int main(int argc, char **argv)
     CHECK(std::fabs(robustScale(e) - r.getMedianAbsoluteDeviation()) < 1e-9 * r.getMedianAbsoluteDeviation(),
           "robustScale reproduces vpRobust's 1.4826 MAD");
   }
+#endif
 
   // 3. V1 and V2
   vpColVector w1, w2;
@@ -73,10 +84,18 @@ int main(int argc, char **argv)
     CHECK(w1.getRows() == P && maxAbsDiff(w1, vpColVector(P, 1.0)) == 0.0, "V1 gives unit weights");
     o.weighting = W_TUKEY;
     Weigher(o).compute(e, vpColVector(), w2);
+#ifdef HAVE_VPROBUST_33
     vpColVector wr;
     vpRobust r;
     r.MEstimator(vpRobust::TUKEY, e, wr);
     CHECK(maxAbsDiff(w2, wr) == 0.0, "V2 equals vpRobust TUKEY on the raw residual");
+    // also with residuals small enough for the 0.0017 floor of the scale to act
+    vpColVector es(e), ws, wrs;
+    for (unsigned int j = 0; j < es.getRows(); j++) es[j] *= 1e-5;
+    tukeyWeights(es, ws);
+    r.MEstimator(vpRobust::TUKEY, es, wrs);
+    CHECK(maxAbsDiff(ws, wrs) == 0.0, "tukeyWeights equals vpRobust TUKEY when the scale floor acts");
+#endif
   }
 
   // 4. V3 with a uniform structure measure is inert: equals V2 exactly

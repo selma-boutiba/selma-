@@ -20,7 +20,6 @@
 #include <visp3/core/vpMath.h>
 #include <visp3/core/vpMatrix.h>
 #include <visp3/core/vpPoseVector.h>
-#include <visp3/core/vpRobust.h>
 
 #include <algorithm>
 #include <chrono>
@@ -185,6 +184,39 @@ inline double robustScale(const vpColVector &r)
   return 1.4826 * median(v);
 }
 
+// Tukey biweight with a median-centred MAD scale: the computation of
+// vpRobust::MEstimator(vpRobust::TUKEY, r, w) in ViSP 3.6, operation for
+// operation (median = element ceil(n/2)-1 of the sorted values, scale
+// floored at 0.0017, c = 4.6851). Implemented here so that the results do
+// not depend on the ViSP version, whose vpRobust interface has changed.
+// Returns the scale used.
+inline double tukeyWeights(const vpColVector &r, vpColVector &w)
+{
+  const unsigned int n = r.getRows();
+  w.resize(n, false);
+  if (n == 0) return 0.0;
+  std::vector<double> v(r.data, r.data + n);
+  const double med = median(v);
+  std::vector<double> normres(n);
+  for (unsigned int i = 0; i < n; i++) normres[i] = std::fabs(r[i] - med);
+  double mad = 1.4826 * median(normres);
+  if (mad < 0.0017) mad = 0.0017;
+  const double C = mad * 4.6851;
+  for (unsigned int i = 0; i < n; i++) {
+    double xi = normres[i] / C;
+    xi *= xi;
+    if (xi > 1.) {
+      w[i] = 0;
+    }
+    else {
+      xi = 1 - xi;
+      xi *= xi;
+      w[i] = xi;
+    }
+  }
+  return mad;
+}
+
 // Eigenvalues of a symmetric matrix by the cyclic Jacobi method; used for
 // lambda_min(H_W) of the 6 x 6 Hessian, so no third-party solver is needed.
 inline std::vector<double> symmetricEigenvalues(const vpMatrix &Ain)
@@ -250,10 +282,8 @@ public:
       throw vpException(vpException::dimensionError,
                         "campaign::Weigher: structG has %u entries for %u measurements", N, P);
     }
-    vpRobust robust;
     if (opt_.weighting == W_TUKEY || opt_.weighting == W_PENALISED) {
-      robust.MEstimator(vpRobust::TUKEY, e, w);
-      scale_ = robust.getMedianAbsoluteDeviation();
+      scale_ = tukeyWeights(e, w);
       if (opt_.weighting == W_PENALISED) {
         const double gmean = mean(structG);
         for (unsigned int j = 0; j < P; j++) {
@@ -282,8 +312,7 @@ public:
                      : std::sqrt(gb * gb + gamma_ * gamma_) / std::sqrt(1.0 + gamma_ * gamma_);
       en[j] = e[j] / d;
     }
-    robust.MEstimator(vpRobust::TUKEY, en, w);
-    scale_ = robust.getMedianAbsoluteDeviation();
+    scale_ = tukeyWeights(en, w);
   }
 
   double scale() const { return scale_; }  // MAD-based scale used by the estimator

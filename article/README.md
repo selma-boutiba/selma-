@@ -10,7 +10,9 @@
 - `RESULTS.md` — results of all campaigns; outputs in `confirmatory/`, `replication/`, `sweep/`.
 - `paper/` — the article draft (`paper/README.md`).
 
-**To run everything on your own computer, follow `RUN_ON_YOUR_PC.md`.** In short:
+**To run everything on your own computer, follow `RUN_ON_YOUR_PC.md`
+(Linux, WSL, macOS) or `RUN_ON_WINDOWS.md` (Windows with Visual Studio 2015 or
+later and ViSP).** In short, on Linux:
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt

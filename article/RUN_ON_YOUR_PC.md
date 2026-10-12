@@ -12,9 +12,9 @@ Commands are run from the `article/` directory unless stated otherwise.
 
 | Item | Version | Note |
 |---|---|---|
-| Operating system | Ubuntu 22.04 or 24.04 | On Windows, use WSL 2 with Ubuntu (§2.2) |
+| Operating system | Ubuntu 22.04 or 24.04 | Windows with Visual Studio: see `RUN_ON_WINDOWS.md` |
 | ViSP | 3.3 or later | modules core, io, robot; no modified ViSP class is needed |
-| CMake, C++ compiler | CMake 3.10+, C++17 | `g++` 9 or later |
+| CMake, C++ compiler | CMake 3.10+, C++14 | `g++` 9 or later; Visual Studio 2015 or later |
 | Python | 3.9 or later | packages in `requirements.txt` |
 | Your two thesis textures | `peppers.jpg`, `peppers_o_b.jpg` | not in the repository (copyright) |
 | Disk | about 1 GB | 280 KB of log per run |
@@ -36,7 +36,13 @@ sudo apt install -y git cmake g++ python3 python3-venv libvisp-dev
 already use ViSP built from source for the thesis, skip `libvisp-dev` and give
 its build directory to CMake in §4 with `-DVISP_DIR=/path/to/visp-build`.
 
-### 2.2 Windows (WSL 2)
+### 2.2 Windows
+
+With Visual Studio and ViSP installed natively, follow `RUN_ON_WINDOWS.md`
+(CMake GUI, Visual Studio, Command Prompt, and the Python versions of the
+scripts). The alternative below runs the Linux route inside Windows.
+
+**WSL 2:**
 
 1. In PowerShell, as administrator, run:
 
@@ -59,9 +65,6 @@ its build directory to CMake in §4 with `-DVISP_DIR=/path/to/visp-build`.
    `\\wsl$\Ubuntu-24.04\home\<user>\`, so you can open the figures and the
    PDF there.
 
-A native Windows build, with Visual Studio and ViSP compiled from source, can
-compile the C++ program. The campaign scripts, however, need `bash`. That
-route has not been tested.
 
 ### 2.3 macOS
 
@@ -147,7 +150,12 @@ columns are listed in `cpp/campaign.h`. Its options (`./build/herpvs_campaign -h
 
 ## 7. The campaigns
 
-`campaign/run_campaign.sh` runs one design. `JOBS` is the number of runs in
+`campaign/run_campaign.sh` runs one design. `campaign/run_campaign.py` is the
+same in Python, for systems without `bash`:
+`python3 campaign/run_campaign.py confirmatory --jobs 4`. Likewise,
+`tools/make_textures.py` replaces `tools/make_textures.sh`, and
+`analysis/run_analyses.py confirmatory replication sweep` runs the analyses
+of §8 in one command. `JOBS` is the number of runs in
 parallel; set it to your number of physical cores. Times below are for four
 cores, as measured here.
 
