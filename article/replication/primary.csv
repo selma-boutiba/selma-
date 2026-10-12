@@ -1,0 +1,3 @@
+test,type,interaction,scenario,comparison,outcome,n,effect,ci95,p,p_holm
+P1,Wilcoxon (both succeed),desired,coffee_dark_disc,hermite / tukey,final_t_mm,0,,"[nan, nan]",,
+P1,Wilcoxon (both succeed),desired,coffee_dark_disc,hermite / tukey,final_r_deg,0,,"[nan, nan]",,

@@ -1,0 +1,14 @@
+\begin{tabular}{@{}lllrrrrr@{}}
+\toprule
+Interaction & Scenario & Weighting & $n$ & $\lVert\Delta\mathbf{t}\rVert$ (mm) & $\lVert\Delta\boldsymbol{\theta}\rVert$ ($^\circ$) & Success & Tail slope \\
+\midrule
+current & coffee dark disc & V2 Tukey & 32 & 128 [128, 128] & 5.62 [5.61, 5.63] & 0\% & -0.02 \\
+current & coffee dark disc & V3 Hermite-informed & 32 & 6.63 [6.63, 56.2] & 0.298 [0.298, 1.42] & 75\% & 0.00 \\
+current & nominal & V2 Tukey & 32 & 10 [8.34, 12.1] & 0.44 [0.366, 0.533] & 100\% & -1.19 \\
+current & nominal & V3 Hermite-informed & 32 & 8.64 [7, 9.78] & 0.38 [0.307, 0.43] & 94\% & -0.65 \\
+desired & coffee dark disc & V2 Tukey & 32 & 175 [175, 175] & 7.69 [7.68, 7.69] & 0\% & 0.06 \\
+desired & coffee dark disc & V3 Hermite-informed & 32 & 8.36 [8.36, 8.36] & 0.363 [0.363, 0.363] & 88\% & 0.00 \\
+desired & nominal & V2 Tukey & 32 & 9.97 [7.83, 10.9] & 0.438 [0.345, 0.48] & 97\% & -1.02 \\
+desired & nominal & V3 Hermite-informed & 32 & 10 [7.52, 19.9] & 0.442 [0.331, 0.877] & 75\% & -0.67 \\
+\bottomrule
+\end{tabular}

@@ -1,0 +1,5 @@
+interaction,scenario,family,A,B,A_only,B_only,p_mcnemar,p_holm
+current,coffee_dark_disc,secondary,hermite,tukey,24,0,1.1920928955078125e-07,3.5762786865234375e-07
+current,nominal,secondary,hermite,tukey,0,2,0.5,0.5
+desired,coffee_dark_disc,secondary,hermite,tukey,28,0,7.450580596923828e-09,2.9802322387695312e-08
+desired,nominal,secondary,hermite,tukey,1,8,0.0390625,0.078125

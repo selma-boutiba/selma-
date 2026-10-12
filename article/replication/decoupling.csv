@@ -1,0 +1,5 @@
+interaction,scenario,n,median_tau,frac_negative
+current,coffee_dark_disc,0,,
+current,nominal,0,,
+desired,coffee_dark_disc,0,,
+desired,nominal,0,,
