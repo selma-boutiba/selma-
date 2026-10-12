@@ -116,8 +116,9 @@ uses the corrected matrix.
 
 ## 5. Not yet established
 
-- Whether the chapter's V1 came from a program without the ε floor
-  (`viewer14`, per earlier notes): the reproduction with the floor agrees
-  within 0.3 %. `-F 0` tests the alternative.
+- Resolved: the chapter's V1 came from a program **with** the ε floor. At the
+  pass where λ equals the chapter's, the clean-scene rotation error is 0.2192°
+  with the floor and 0.2085° without it (chapter: 0.2186°). Under occlusion
+  the floor makes no difference.
 - The cause of F2 (where the consoles were read, or a small difference in the
   first passes).

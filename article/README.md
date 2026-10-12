@@ -5,7 +5,8 @@
   findings it produced (occluder coverage, translation metric, principal point).
 - `PILOT.md` — results of the 160-run pilot (development set); outputs in `pilot/`.
 - `PREREGISTRATION.md` — hypotheses and decision rule for the confirmatory
-  campaign (draft until approved).
+  campaign, committed before its first run.
+- `RESULTS.md` — confirmatory results (1 024 runs); outputs in `confirmatory/`.
 
 Quick start (textures are not in the repository; copy the thesis' `peppers.jpg`
 and `peppers_o_b.jpg` beside this file):
