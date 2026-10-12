@@ -128,8 +128,8 @@ done
 | validate | 0 | V1–V3 | current, thesis pixel order | nominal, Chapter 4 occluder | 6 (done, `VALIDATION.md`) |
 | pilot | 101–104 | V1–V5 | current, desired | nominal; disc dark, textured, low contrast | 160 |
 | confirmatory | 1–32 | V1–V5 | current, desired | as pilot | 1 280 |
-| sweep | 1–32 | V2, V3, V5 | current, desired | dark at 15, 25, 35, 45 % | 768 |
-| replication | 1–32 | V2, V3, V5 | desired | dark 7 % on a second texture | 96 |
+| sweep | 1–32 | V2, V3 | current, desired | dark at 15, 25, 35, 45 % | 512 |
+| replication | 1–32 | V2, V3 | current, desired | clean and dark disc on a second texture | 256 |
 
 Measured: 155 s per run of 600 passes with four runs in parallel on four
 cores, so about 14 h for the confirmatory design and 8 h for the sweep. If
@@ -139,7 +139,8 @@ pilot (`CONF_WEIGHTINGS`), never poses.
 **Second texture.** A single texture is a threat to external validity that a
 reviewer will raise. Choose a texture of different statistics (e.g. a
 man-made scene with large flat regions) and replicate the primary comparison
-on it.
+on it. Chosen: `skimage.data.coffee()` (CC0); sweep and replication are
+pre-registered in `PREREGISTRATION_ADDENDUM.md`.
 
 ## 5. Metrics (per run, `analysis/analyze.py`)
 

@@ -203,9 +203,21 @@ def hull_mask(clean, occ, threshold=10.0):
     return hull.contains_points(np.c_[xx.ravel(), yy.ravel()], radius=0.5).reshape(clean.shape)
 
 
+def transfer_mask(mask, shape):
+    """The same occluder, in target coordinates, on a texture of another size."""
+    X, Y = texture_grid(shape)
+    c, r = target_to_texture(X, Y, mask.shape)
+    ci = np.clip(np.rint(c).astype(int), 0, mask.shape[1] - 1)
+    ri = np.clip(np.rint(r).astype(int), 0, mask.shape[0] - 1)
+    return mask[ri, ci]
+
+
 def cmd_refill(args):
     clean, occ = load_grey(args.clean), load_grey(args.occluded)
     mask = hull_mask(clean, occ, args.threshold)
+    if args.onto:  # keep the geometry, change the texture
+        clean = load_grey(args.onto)
+        mask = transfer_mask(mask, clean.shape)
     os.makedirs(args.out_dir, exist_ok=True)
     for kind in args.kinds.split(","):
         out = fill(clean, mask, kind)
@@ -250,6 +262,8 @@ def main(argv=None):
     f.add_argument("--occluded", required=True)
     f.add_argument("--kinds", default="uniform_dark,uniform_bright,low_contrast,textured")
     f.add_argument("--tag", default="disc")
+    f.add_argument("--onto", default=None,
+                   help="another clean texture: transfer the occluder there, same target geometry")
     f.add_argument("--threshold", type=float, default=10.0)
     f.add_argument("--out-dir", default="textures")
     f.add_argument("--poses", default=None)

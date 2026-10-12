@@ -356,6 +356,8 @@ def main(argv=None):
                     help="primary accuracy tests (P1): comma-separated interaction:scenario:A:B")
     ap.add_argument("--primary-success", default=DEFAULT_PRIMARY_SUCCESS,
                     help="primary success tests (P2, McNemar): comma-separated interaction:scenario:A:B")
+    ap.add_argument("--decision-labels", default="method paper,analysis paper",
+                    help="decision when every P1 test meets the rule, and otherwise")
     ap.add_argument("--equiv-conf", type=float, default=0.95)
     ap.add_argument("--no-figures", action="store_true")
     args = ap.parse_args(argv)
@@ -440,8 +442,9 @@ def main(argv=None):
         prim.loc[valid, "p_holm"] = holm(prim.loc[valid, "p"].to_numpy())
         p1 = prim[prim.test == "P1"]
         method = len(p1) > 0 and bool(((p1.p_holm < 0.05) & (p1.effect <= RATIO_RULE)).all())
-        decision = ("method paper: every P1 test is significant after Holm with ratio <= %.2f" % RATIO_RULE
-                    if method else "analysis paper: the P1 condition is not met")
+        yes, no = args.decision_labels.split(",")
+        decision = (f"{yes}: every P1 test is significant after Holm with ratio <= {RATIO_RULE:.2f}"
+                    if method else f"{no}: the P1 condition is not met")
         if len(comps):
             comps.loc[comps.family == "primary", "p_holm"] = prim[prim.test == "P1"].p_holm.to_numpy()
     if len(comps):

@@ -2,7 +2,7 @@
 # =====================================================================
 #  run_campaign.sh -- run one design of the simulation campaign.
 #
-#  Usage:   ./run_campaign.sh pilot|confirmatory|sweep|validate
+#  Usage:   ./run_campaign.sh pilot|confirmatory|replication|sweep|validate
 #  Environment (defaults in brackets):
 #    BIN     servoing program built with campaign.h            [./viewer15]
 #    JOBS    runs in parallel; at most the number of cores     [3]
@@ -18,7 +18,7 @@
 # =====================================================================
 set -euo pipefail
 
-DESIGN=${1:?usage: run_campaign.sh pilot|confirmatory|sweep|validate}
+DESIGN=${1:?usage: run_campaign.sh pilot|confirmatory|replication|sweep|validate}
 BIN=${BIN:-./viewer15}
 JOBS=${JOBS:-3}
 NITER=${NITER:-600}
@@ -41,8 +41,11 @@ case "$DESIGN" in
   confirmatory)
     POSES="$HERE/poses.csv"; IDS=$(seq 1 32)
     WEIGHTINGS=${CONF_WEIGHTINGS:-$WEIGHTINGS} ;;
+  replication)   # second texture: REF=coffee.png, TEX holding coffee_dark_disc (PREREGISTRATION_ADDENDUM.md)
+    POSES="$HERE/poses.csv"; IDS=$(seq 1 32); WEIGHTINGS="2 3"
+    SCENARIOS="nominal coffee_dark_disc" ;;
   sweep)         # breakdown: occluded fraction at the desired pose
-    POSES="$HERE/poses.csv"; IDS=$(seq 1 32); WEIGHTINGS="2 3 5"
+    POSES="$HERE/poses.csv"; IDS=$(seq 1 32); WEIGHTINGS="2 3"
     SCENARIOS="uniform_dark_f150 uniform_dark_f250 uniform_dark_f350 uniform_dark_f450" ;;
   *) echo "unknown design $DESIGN" >&2; exit 2 ;;
 esac
