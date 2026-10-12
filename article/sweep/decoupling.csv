@@ -1,0 +1,9 @@
+interaction,scenario,n,median_tau,frac_negative
+current,uniform_dark_f150,0,,
+current,uniform_dark_f250,0,,
+current,uniform_dark_f350,0,,
+current,uniform_dark_f450,0,,
+desired,uniform_dark_f150,0,,
+desired,uniform_dark_f250,0,,
+desired,uniform_dark_f350,0,,
+desired,uniform_dark_f450,0,,

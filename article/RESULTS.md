@@ -1,4 +1,4 @@
-# Confirmatory campaign — results
+# Campaign results: confirmatory, replication, occlusion sweep
 
 Pre-registration: `PREREGISTRATION.md`, committed at `07c1743`
 (2026-10-11 18:16 UTC) before the first run. Runs: 1 024 = 32 poses × V1–V4 ×
@@ -252,8 +252,132 @@ Seven additional runs were made on coffee with the disc
 
 ## 7. Occlusion-fraction sweep
 
-Running. Pre-registered in `PREREGISTRATION_ADDENDUM.md` §S; to be reported
-here.
+**Pre-registration.** `PREREGISTRATION_ADDENDUM.md` §S, committed at `418f24c`
+before the first run.
+
+**Runs.** 512 runs, all complete: 32 poses × V2, V3 × two interaction matrices
+× a uniform dark ellipse covering 15, 25, 35 and 45 % of the image at the
+desired pose. At the initial poses the coverage is 17–73 %.
+
+**Analysis.** The pre-registered command, then `analysis/sweep_figures.py`.
+Outputs are in `sweep/`.
+
+The 7.5 % column repeats the confirmatory dark disc for reference. It is a
+disc, not one of the ellipses, and it is not part of family S.
+
+### 7.1 Family S (Holm over 24 tests)
+
+**Success out of 32 poses.** "V3-only / V2-only" counts the discordant poses
+of the McNemar test; p is after Holm.
+
+*Interaction matrix from the current image:*
+
+| Fraction | V2 | V3 | V3-only / V2-only | p (Holm) |
+|---|---|---|---|---|
+| 7.5 % | 28 | 27 | 2 / 3 | — |
+| 15 % | 27 | 24 | 0 / 3 | 0.50 |
+| 25 % | 28 | 16 | 0 / 12 | 0.0029 |
+| 35 % | 25 | 14 | 2 / 13 | 0.022 |
+| 45 % | 20 | **0** | 0 / 20 | $2.7\times10^{-5}$ |
+
+*Interaction matrix from the desired image:*
+
+| Fraction | V2 | V3 | V3-only / V2-only | p (Holm) |
+|---|---|---|---|---|
+| 7.5 % | 32 | 29 | 0 / 3 | — |
+| 15 % | 27 | 27 | 4 / 4 | 1 |
+| 25 % | 16 | 30 | 14 / 0 | $8.5\times10^{-4}$ |
+| 35 % | 5 | 28 | 23 / 0 | $4.1\times10^{-6}$ |
+| 45 % | **0** | 27 | 27 / 0 | $2.7\times10^{-7}$ |
+
+Clopper–Pearson intervals are in `sweep/sweep_table.csv`. Figures:
+`sweep/figures/sweep_success.pdf` and `sweep_success_vs_initial_coverage.pdf`.
+
+**Accuracy: V3/V2 camera-centre error over the poses where both succeed.**
+The rotation error agrees to three decimals. "n/a" means fewer than six such
+poses, so no test.
+
+| Fraction | Current-image $\mathbf L$ | Desired-image $\mathbf L$ |
+|---|---|---|
+| 7.5 % | 0.63 [0.54, 0.73], n = 25 | 0.66 [0.60, 0.73], n = 29 |
+| 15 % | 0.77 [0.70, 0.83], n = 24, p = $2.6\times10^{-4}$ | 0.77 [0.72, 0.80], n = 23, p = $7.6\times10^{-6}$ |
+| 25 % | 0.46 [0.36, 0.62], n = 16, p = $3.4\times10^{-4}$ | 0.46 [0.23, 0.69], n = 16, p = $3.4\times10^{-4}$ |
+| 35 % | 0.36 [0.25, 0.53], n = 12, p = 0.0029 | n/a (5 pairs) |
+| 45 % | n/a (V3: 0 successes) | n/a (V2: 0 successes) |
+
+The 7.5 % row comes from the confirmatory campaign.
+
+**Pre-specified statement "the accuracy gain of V3 holds at every fraction":
+not met.** Three of the eight cells cannot be tested. In each of the five
+cells that can, V3/V2 ≤ 0.77 and is significant after Holm. The gain grows
+with the fraction, from 0.77 at 15 % to 0.36 at 35 %
+(`sweep/figures/sweep_ratio.pdf`).
+
+**Breakdown fraction** (success rate below 1/2):
+- V3 with the current-image matrix: 35 % (exactly 1/2 at 25 %).
+- V2 with the desired-image matrix: 35 % (exactly 1/2 at 25 %).
+- The other two pairings do not break down up to 45 %.
+
+**Final errors of successful runs (median camera-centre error).** They
+*decrease* as the fraction grows:
+
+| Weighting, $\mathbf L$ from | 15 % | 25 % | 35 % | 45 % |
+|---|---|---|---|---|
+| V3, desired image | 0.33 mm | 0.23 mm | 0.11 mm | 0.02 mm |
+| V2, desired image | 0.44 mm | 0.34 mm | — | — |
+| V2, current image | 0.44 mm | 0.41 mm | 0.26 mm | 0.11 mm |
+
+This fits the gain law, under which a larger persistent residual keeps the
+gain from vanishing. That explanation is untested.
+
+### 7.2 Failure modes (exploratory)
+
+- **The failures are divergences, not biased equilibria.**
+  - Failed runs end 68–4 727 mm and 3–175° from the target.
+  - 168 of the 198 failed runs (85 %) are still moving at pass 600 (tail
+    slope above 0.1 in absolute value).
+  - This differs from the stationary bias on the second texture (§6.3).
+- **V2 with the desired-image matrix rejects too little.**
+  - At the first pass V2 down-weights ($w<0.25$) only 4–10 % of the
+    measurements, while the occluder covers 17–73 % of the image. At the end
+    of the failed runs at 45 % the fraction is 2.5 %.
+  - At pose 1 and 45 %, at the first pass (`sweep/diagnostics/`), V2's mean
+    weight inside the occluder is 0.73. With the desired-image matrix that
+    interior carries 55 % of the total influence; for V3 the figures are 0.36
+    and 9 %.
+  - With the current-image matrix, the same interior carries 4 % of the
+    influence: its rows are zero (Proposition 1), and V2 converges.
+  - This is the mechanism of §6.3 at scale. Tukey accepts occluded
+    measurements, and only the desired-image matrix gives them a force.
+- **V3 with the current-image matrix fails late, along the weakly observable
+  direction.**
+  - At pose 1 and 45 %, V3 comes within 75 mm of the target at pass 100. It
+    then leaves along $\Delta t_y\approx Z^{*}\theta_x$ (ratio 1.29 m),
+    reaching 1.1 m and 51° at pass 600.
+  - Between passes 100 and 150 the unweighted feature cost *decreases* as
+    the camera moves away, from $3.46$ to $3.38\times10^{11}$. V2 from the
+    same pose converges to 0.1 mm.
+  - Pooled over fractions, V3's success with the current-image matrix falls
+    with the displacement bin, from 0.59 in bin 0 to 0.16 in bin 3, and with
+    the initial coverage, from 0.79 below 20 % to 0.09 above 50 %.
+  - The mechanism is not established. The falling cost is consistent with
+    §4, where under occlusion the final cost ranks accuracy inversely.
+
+The maps of the 45 % diagnostics show the thesis texture, so they are not
+committed; `sweep/diagnostics/run_diag_f450.sh` regenerates them.
+
+### 7.3 What the sweep changes
+
+- **The interaction matrix decides which weighting tolerates large occluders.**
+  - Desired-image matrix: V3 keeps 27–30 of 32 poses up to 45 %, while V2
+    falls to 0.
+  - Current-image matrix: V2 keeps 20 of 32 at 45 %, while V3 falls to 0.
+  - Neither weighting is robust under both matrices.
+- **V3 with the desired-image matrix is the only pairing that is robust on
+  both axes tested.** It does not break down up to 45 % on the thesis
+  texture, and it converges at 28 of 32 poses on the occluded second texture.
+- **The accuracy gain of V3 when both converge grows with the occluded
+  fraction,** from 0.77 at 15 % to 0.36 at 35 %.
 
 ## 8. What the article can claim
 
@@ -271,14 +395,22 @@ here.
      test could not be computed).
    - V3 rejects an occluder by the absence of current-image structure, not by
      residual magnitude (§6.3).
-2. With the current-image matrix this gain costs convergence at large initial
-   displacements, on both textures. With the desired-image matrix the cost is
-   3 of 32 poses on the thesis texture and 4–8 of 32 on the second texture.
-3. Under occlusion the final cost ranks accuracy inversely, so it cannot serve
+2. When both converge, V3's accuracy gain over V2 grows with the occluded
+   fraction: V3/V2 = 0.77 at 15 %, 0.46 at 25 % and 0.36 at 35 % (family S,
+   all p_Holm ≤ 0.003).
+3. Robustness to the occluded fraction depends on how the weighting is paired
+   with the interaction matrix (family S).
+   - V3 with the desired-image matrix converges at 84–94 % of poses up to 45 %.
+     V2 with the same matrix breaks down at 25–35 %.
+   - With the current-image matrix the order reverses: V3 breaks down at
+     25–35 %, while V2 keeps 62 % at 45 %.
+   - With the current-image matrix, V3 also narrows the convergence domain at
+     large initial displacements, on both textures.
+4. Under occlusion the final cost ranks accuracy inversely, so it cannot serve
    as a convergence criterion. The stability margin of the reweighted law holds
    throughout.
-4. Tukey weighting on residual magnitude can converge farther from the target
+5. Tukey weighting on residual magnitude can converge farther from the target
    than the unweighted law. This happens when part of the occluder matches the
-   grey level of the hidden texture (exploratory; one texture, §6.3).
-
-The occlusion-fraction sweep (§7) is still to be added.
+   grey level of the hidden texture (exploratory; one texture, §6.3). With
+   the desired-image matrix and large occluders, the same failure becomes a
+   divergence (§7.2).

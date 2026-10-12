@@ -1,0 +1,9 @@
+interaction,scenario,family,A,B,A_only,B_only,p_mcnemar,p_holm
+current,uniform_dark_f150,primary,hermite,tukey,0,3,0.25,
+current,uniform_dark_f250,primary,hermite,tukey,0,12,0.00048828125,
+current,uniform_dark_f350,primary,hermite,tukey,2,13,0.00738525390625,
+current,uniform_dark_f450,primary,hermite,tukey,0,20,1.9073486328125e-06,
+desired,uniform_dark_f150,primary,hermite,tukey,4,4,1.0,
+desired,uniform_dark_f250,primary,hermite,tukey,14,0,0.0001220703125,
+desired,uniform_dark_f350,primary,hermite,tukey,23,0,2.384185791015625e-07,
+desired,uniform_dark_f450,primary,hermite,tukey,27,0,1.4901161193847656e-08,

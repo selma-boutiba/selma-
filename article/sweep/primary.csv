@@ -1,0 +1,25 @@
+test,type,interaction,scenario,comparison,outcome,n,effect,ci95,p,p_holm
+P1,Wilcoxon (both succeed),current,uniform_dark_f150,hermite / tukey,final_t_mm,24,0.7651810446584707,"[0.704, 0.826]",2.014636993408203e-05,0.0002619028091430664
+P1,Wilcoxon (both succeed),current,uniform_dark_f150,hermite / tukey,final_r_deg,24,0.765392840333659,"[0.703, 0.827]",2.014636993408203e-05,0.0002619028091430664
+P1,Wilcoxon (both succeed),current,uniform_dark_f250,hermite / tukey,final_t_mm,16,0.45974200311607005,"[0.364, 0.624]",3.0517578125e-05,0.000335693359375
+P1,Wilcoxon (both succeed),current,uniform_dark_f250,hermite / tukey,final_r_deg,16,0.4595466385079652,"[0.364, 0.623]",3.0517578125e-05,0.000335693359375
+P1,Wilcoxon (both succeed),current,uniform_dark_f350,hermite / tukey,final_t_mm,12,0.3613876971182659,"[0.255, 0.529]",0.00048828125,0.0029296875
+P1,Wilcoxon (both succeed),current,uniform_dark_f350,hermite / tukey,final_r_deg,12,0.36128324737698103,"[0.255, 0.53]",0.00048828125,0.0029296875
+P1,Wilcoxon (both succeed),current,uniform_dark_f450,hermite / tukey,final_t_mm,0,,"[nan, nan]",,
+P1,Wilcoxon (both succeed),current,uniform_dark_f450,hermite / tukey,final_r_deg,0,,"[nan, nan]",,
+P1,Wilcoxon (both succeed),desired,uniform_dark_f150,hermite / tukey,final_t_mm,23,0.7675922627033535,"[0.722, 0.801]",4.76837158203125e-07,7.62939453125e-06
+P1,Wilcoxon (both succeed),desired,uniform_dark_f150,hermite / tukey,final_r_deg,23,0.7674240521873371,"[0.723, 0.801]",4.76837158203125e-07,7.62939453125e-06
+P1,Wilcoxon (both succeed),desired,uniform_dark_f250,hermite / tukey,final_t_mm,16,0.4634427870492632,"[0.228, 0.688]",3.0517578125e-05,0.000335693359375
+P1,Wilcoxon (both succeed),desired,uniform_dark_f250,hermite / tukey,final_r_deg,16,0.46274489418058345,"[0.227, 0.688]",3.0517578125e-05,0.000335693359375
+P1,Wilcoxon (both succeed),desired,uniform_dark_f350,hermite / tukey,final_t_mm,5,,"[nan, nan]",,
+P1,Wilcoxon (both succeed),desired,uniform_dark_f350,hermite / tukey,final_r_deg,5,,"[nan, nan]",,
+P1,Wilcoxon (both succeed),desired,uniform_dark_f450,hermite / tukey,final_t_mm,0,,"[nan, nan]",,
+P1,Wilcoxon (both succeed),desired,uniform_dark_f450,hermite / tukey,final_r_deg,0,,"[nan, nan]",,
+P2,McNemar (success),current,uniform_dark_f150,hermite / tukey,success,3,-3.0,"hermite-only 0, tukey-only 3",0.25,0.5
+P2,McNemar (success),current,uniform_dark_f250,hermite / tukey,success,12,-12.0,"hermite-only 0, tukey-only 12",0.00048828125,0.0029296875
+P2,McNemar (success),current,uniform_dark_f350,hermite / tukey,success,15,-11.0,"hermite-only 2, tukey-only 13",0.00738525390625,0.02215576171875
+P2,McNemar (success),current,uniform_dark_f450,hermite / tukey,success,20,-20.0,"hermite-only 0, tukey-only 20",1.9073486328125e-06,2.6702880859375e-05
+P2,McNemar (success),desired,uniform_dark_f150,hermite / tukey,success,8,0.0,"hermite-only 4, tukey-only 4",1.0,1.0
+P2,McNemar (success),desired,uniform_dark_f250,hermite / tukey,success,14,14.0,"hermite-only 14, tukey-only 0",0.0001220703125,0.0008544921875
+P2,McNemar (success),desired,uniform_dark_f350,hermite / tukey,success,23,23.0,"hermite-only 23, tukey-only 0",2.384185791015625e-07,4.0531158447265625e-06
+P2,McNemar (success),desired,uniform_dark_f450,hermite / tukey,success,27,27.0,"hermite-only 27, tukey-only 0",1.4901161193847656e-08,2.682209014892578e-07
