@@ -1,0 +1,338 @@
+--- tutorial-viewer4.cpp	2026-10-13 09:14:43.670760924 +0000
++++ tutorial-viewer4-article.cpp	2026-10-13 09:15:18.772849501 +0000
+@@ -1,5 +1,35 @@
++// =====================================================================
++//  tutorial-viewer4-article.cpp
++//
++//  The thesis program tutorial-viewer4.cpp (Variant 3), with the changes
++//  needed to produce the results of the article. Every change is marked
++//  [ARTICLE-n]; everything else is the thesis code unchanged.
++//
++//    [ARTICLE-1]  command-line options (weighting, interaction matrix,
++//                 textures, initial pose, iterations, log file);
++//                 -i is no longer required
++//    [ARTICLE-2]  textures, display, click and number of iterations taken
++//                 from the options (init() used fixed local values)
++//    [ARTICLE-3]  initial pose read from campaign/poses.csv (-P, -p)
++//    [ARTICLE-4]  pixel-to-metre conversion: corrected argument order (-x 1)
++//    [ARTICLE-5]  structure measure from the first-order Hermite kernels
++//                 g10_k, g01_k (-G 1), as Chapter 4 describes it
++//    [ARTICLE-6]  interaction matrix from the desired image (-L 1)
++//    [ARTICLE-7]  weightings V1-V4 (-w 1..4)
++//    [ARTICLE-8]  per-iteration CSV log for analysis/analyze.py (-o) and a
++//                 final summary line
++//    [ARTICLE-9]  plot and saved maps only in interactive mode
++//
++//  With -x 0 -G 0 -L 0 -w 3 the program computes exactly what the thesis
++//  file computes. The article uses -x 1 -G 1, -L 0 or 1, -w 1..4.
++//  Example (one run of the article, displayed):
++//    tutorial-viewer4-article -w 3 -L 1 -x 1 -G 1 -r textures/peppers.jpg
++//        -t textures/uniform_dark_disc.png -P campaign/poses.csv -p 1 -n 600
++//  Add -d -c -o run.csv to run without display and write the log.
++// =====================================================================
+ #include <iostream>
+ #include <fstream>
++#include "campaign.h"   // [ARTICLE-3, 8] pose file reader and CSV logger (article/cpp/campaign.h)
+ #include <visp3/core/vpDebug.h>
+ #include <visp3/core/vpConfig.h>
+ #include <visp3/core/vpImage.h>
+@@ -42,7 +72,23 @@
+ 
+ 
+ // List of allowed command line options
+-#define GETOPTARGS  "cdi:n:h"
++// [ARTICLE-1] w L x G r t P p o added
++#define GETOPTARGS  "cdi:n:hw:L:x:G:r:t:P:p:o:"
++
++// [ARTICLE-1] Options of the article. The defaults are those of the article;
++// -x 0 -G 0 gives the thesis file exactly.
++int opt_weighting = 3;        // -w 1: none (V1), 2: Tukey (V2), 3: Hermite-informed (V3), 4: structure-penalised (V4)
++int opt_desiredL = 0;         // -L 0: interaction matrix from the current image (thesis), 1: from the desired image
++int opt_pixelOrder = 1;       // -x 0: thesis call convertPoint(cam, i, j, y, x), 1: corrected convertPoint(cam, j, i, x, y)
++int opt_firstOrderG = 1;      // -G 0: structure measure from w_h, w_v, w_d (thesis file), 1: first-order kernels (Chapter 4)
++std::string opt_ref = "./peppers.jpg";        // -r texture of the desired image
++std::string opt_servo = "./peppers_o_b.jpg";  // -t texture seen during the servo
++std::string opt_poseFile;     // -P pose file (campaign/poses.csv)
++int opt_poseId = 0;           // -p pose id; 0 = the Chapter 4 pose
++std::string opt_log;          // -o per-iteration CSV log
++bool g_click = true;          // -c
++bool g_display = true;        // -d
++int g_niter = 600;            // -n number of iterations
+ 
+ void usage(const char *name, const char *badparam, std::string ipath, int niter);
+ bool getOptions(int argc, const char **argv, std::string &ipath,
+@@ -96,6 +142,16 @@
+ 		case 'i': ipath = optarg_; break;
+ 		case 'n': niter = atoi(optarg_); break;
+ 		case 'h': usage(argv[0], NULL, ipath, niter); return false; break;
++		// [ARTICLE-1]
++		case 'w': opt_weighting = atoi(optarg_); break;
++		case 'L': opt_desiredL = atoi(optarg_); break;
++		case 'x': opt_pixelOrder = atoi(optarg_); break;
++		case 'G': opt_firstOrderG = atoi(optarg_); break;
++		case 'r': opt_ref = optarg_; break;
++		case 't': opt_servo = optarg_; break;
++		case 'P': opt_poseFile = optarg_; break;
++		case 'p': opt_poseId = atoi(optarg_); break;
++		case 'o': opt_log = optarg_; break;
+ 
+ 		default:
+ 			usage(argv[0], optarg_, ipath, niter);
+@@ -133,7 +189,7 @@
+ 		std::string filename;
+ 		bool opt_click_allowed = true;
+ 		bool opt_display = true;
+-		int opt_niter = 400;
++		int opt_niter = 600;   // [ARTICLE-1] 600 iterations, as in the article
+ 
+ 		// Get the visp-images-data package path or VISP_INPUT_IMAGE_PATH environment variable value
+ 		env_ipath = vpIoTools::getViSPImagesDataPath();
+@@ -164,16 +220,16 @@
+ 			}
+ 		}
+ 
+-		// Test if an input path is set
+-		if (opt_ipath.empty() && env_ipath.empty()) {
+-			usage(argv[0], NULL, ipath, opt_niter);
+-			std::cerr << std::endl
+-				<< "ERROR:" << std::endl;
+-			std::cerr << "  Use -i <visp image path> option or set VISP_INPUT_IMAGE_PATH "
+-				<< std::endl
+-				<< "  environment variable to specify the location of the " << std::endl
+-				<< "  image path where test images are located." << std::endl << std::endl;
+-			exit(-1);
++		// [ARTICLE-1] The input path is not used by this program (the textures
++		// are given by -r and -t), so it is no longer required.
++
++		// [ARTICLE-2] pass the parsed options to init()
++		g_click = opt_click_allowed;
++		g_display = opt_display;
++		g_niter = opt_niter;
++		if (opt_weighting < 1 || opt_weighting > 4) {
++			std::cerr << "-w must be 1, 2, 3 or 4" << std::endl;
++			return 2;
+ 		}
+ 
+ 		init();
+@@ -245,13 +301,14 @@
+ {
+ 	
+ 
+-	bool opt_click_allowed = true;
+-	bool opt_display = true;
+-	int opt_niter = 1000;
++	// [ARTICLE-2] options instead of fixed values (was: true, true, 1000)
++	bool opt_click_allowed = g_click;
++	bool opt_display = g_display;
++	int opt_niter = g_niter + 1;   // the loop runs while iter < opt_niter: iterations 1..g_niter
+ 	vpImage<unsigned char> Itexture;
+ 	vpImage<unsigned char> Itextured;
+-	vpImageIo::read(Itexture, "./peppers.jpg");
+-	vpImageIo::read(Itextured, "./peppers_o_b.jpg");
++	vpImageIo::read(Itexture, opt_ref);     // [ARTICLE-2] was "./peppers.jpg"
++	vpImageIo::read(Itextured, opt_servo);  // [ARTICLE-2] was "./peppers_o_b.jpg"
+ 	
+ 	vpColVector X[4];
+ 	for (int i = 0; i < 4; i++) X[i].resize(3);
+@@ -266,7 +323,7 @@
+ 	sim.init(Itexture, X);
+ 
+ 	vpPlot ViSP_plot;
+-	init_visp_plot(ViSP_plot);
++	if (opt_display) init_visp_plot(ViSP_plot);   // [ARTICLE-9] the plot needs a display
+ 
+ 	Hermite();
+ 	HermiteDerivKernels();
+@@ -324,6 +381,13 @@
+ 
+ 	vpHomogeneousMatrix cMo;
+ 	cMo.buildFrom(0.04, -0.04, 1.10, vpMath::rad(12), vpMath::rad(-12), vpMath::rad(6));
++	// [ARTICLE-3] initial pose from the pose file (tx, ty, tz in m; theta-u in deg)
++	if (!opt_poseFile.empty() || opt_poseId != 0) {
++		if (!campaign::loadPose(opt_poseFile, opt_poseId, cMo)) {
++			std::cerr << "pose " << opt_poseId << " not found in " << opt_poseFile << std::endl;
++			exit(3);
++		}
++	}
+ 
+ 	
+ 	///cMo.buildFrom(0.38, -0.33, 3.7, vpMath::rad(27), vpMath::rad(-36), vpMath::rad(14));
+@@ -461,6 +525,30 @@
+ 	// here it is computed at the desired position
+ 	sI.interaction(Lsd);
+ 
++	// [ARTICLE-6] interaction matrix of the desired image, computed once
++	vpMatrix Ldes;
++	sId.interaction(Ldes);
++
++	// [ARTICLE-8] per-iteration log, in the format of the campaign program
++	campaign::Logger logger;
++	if (!opt_log.empty()) {
++		campaign::Options o;
++		o.weighting = opt_weighting;
++		o.interaction = opt_desiredL ? campaign::L_DESIRED : campaign::L_CURRENT;
++		o.refTexture = opt_ref;
++		o.servoTexture = opt_servo;
++		o.poseFile = opt_poseFile;
++		o.poseId = opt_poseId;
++		o.pixelOrder = opt_pixelOrder;
++		std::ostringstream extra;
++		extra << "# struct_measure=" << (opt_firstOrderG ? "first_order" : "summed") << "\n"
++			<< "# floor=1\n# passes=" << g_niter << "\n# program=tutorial-viewer4-article\n";
++		if (!logger.open(opt_log, o, extra.str())) {
++			std::cerr << "cannot write " << opt_log << std::endl;
++			exit(4);
++		}
++	}
++
+ 	// Compute the Hessian H = L^TL
+ 	Hsd = Lsd.AtA();
+ 
+@@ -506,6 +594,7 @@
+ 
+ 	do {
+ 		double t_start_iter = vpTime::measureTimeMs();
++		campaign::Timer t_iter_timer;   // [ARTICLE-8]
+ 		  std::cout << "--------------------------------------------" << iter++ << std::endl;
+ 
+ 		//  Acquire the new image
+@@ -569,7 +658,9 @@
+ 			Ne = normeErrorI;
+ 		}
+ 
+-		sI.interaction(Lsd);
++		// [ARTICLE-6] current-image (thesis) or desired-image interaction matrix
++		if (opt_desiredL) Lsd = Ldes;
++		else sI.interaction(Lsd);
+ 		
+ 
+ 		// Robust re-weighting: compute a Tukey M-estimator weight per pixel,
+@@ -592,11 +683,37 @@
+ 				<< "   |e| normalized = " << error_n.sumSquare() << std::endl;
+ 		}
+ 
++		// [ARTICLE-7] the four weightings of the article
++		campaign::Timer t_weight_timer;
+ 		w.resize(error.getRows());
+-		w = 1;
+-		robust.MEstimator(vpRobust::TUKEY, error_n, w);
++		w = 1;                                                      // V1: no weighting
++		double scale = 0.0;
++		if (opt_weighting == 2 || opt_weighting == 4) {             // V2, V4: Tukey on the raw residual
++			robust.MEstimator(vpRobust::TUKEY, error, w);
++			scale = (std::max)(campaign::robustScale(error), 0.0017);
++		}
++		else if (opt_weighting == 3) {                              // V3: Tukey on the Hermite-normalised residual
++			robust.MEstimator(vpRobust::TUKEY, error_n, w);
++			scale = (std::max)(campaign::robustScale(error_n), 0.0017);
++		}
++		else {
++			scale = campaign::robustScale(error);
++		}
++		if (opt_weighting == 4 && structG.getRows() > 0) {         // V4: times 1/sqrt(1 + Gbar^2)
++			const unsigned int nbIn = structG.getRows();
++			double Gmean = 0.0;
++			for (unsigned int k = 0; k < nbIn; k++) Gmean += structG[k];
++			Gmean /= nbIn;
++			if (Gmean < 1e-12) Gmean = 1e-12;
++			for (unsigned int j = 0; j < w.getRows(); j++) {
++				double gb = structG[j % nbIn] / Gmean;
++				w[j] *= 1.0 / std::sqrt(1.0 + gb * gb);
++			}
++		}
++		const double t_weight = t_weight_timer.ms();
+ 
+-		if (iter == 2 || iter == 601) { saveMaps(w, structG, iter - 1, "v3"); }
++		// [ARTICLE-9] maps only in interactive runs (not when logging a campaign run)
++		if (opt_log.empty() && (iter == 2 || iter == opt_niter)) { saveMaps(w, structG, iter - 1, "v" + std::to_string(opt_weighting)); }
+ 
+ 		Lp.resize(Lsd.getRows(), Lsd.getCols());
+ 		error_p.resize(error.getRows());
+@@ -666,10 +783,33 @@
+ 		}
+ 
+ 		
++		// [ARTICLE-8] log: camera pose relative to the desired pose (cdMc),
++		// target-frame difference (errorpose, as in the thesis tables), costs,
++		// gains and weight statistics
++		if (!opt_log.empty()) {
++			campaign::IterationRecord rec;
++			rec.iter = iter - 1;
++			rec.poseErr = campaign::poseError(cdMo, cMo);
++			for (unsigned int i = 0; i < 3; i++) rec.tTarget[i] = errorpose[i];
++			rec.v = v;
++			rec.e2 = normeError;
++			rec.eI2 = normeErrorI;
++			rec.lambda = lambda;
++			rec.mu = mu;
++			rec.scale = scale;
++			rec.gamma = 0.1;
++			logger.weightStats(w, Hsd, error.getRows() / ((I.getHeight() - 2 * bord) * (I.getWidth() - 2 * bord)), rec);
++			rec.tWeightMs = t_weight;
++			rec.tIterMs = t_iter_timer.ms();
++			logger.write(rec);
++		}
++
+ 		//std::cin.get();
+-		ViSP_plot.plot(0, (iter), v);
+-		ViSP_plot.plot(1, (iter) , errorpose);
+-		ViSP_plot.plot(2, (iter) , err);
++		if (opt_display) {   // [ARTICLE-9]
++			ViSP_plot.plot(0, (iter), v);
++			ViSP_plot.plot(1, (iter) , errorpose);
++			ViSP_plot.plot(2, (iter) , err);
++		}
+ 		//if (iter == 200 || normeError < 10000) { std::cin.get(); }
+ 		
+ 		double t_iter = vpTime::measureTimeMs()- t_start_iter;
+@@ -679,6 +819,12 @@
+ 		std::cout << "average time per iterations: " << average_time_ms <<"ms"<< std::endl;
+ 	} while (normeError > 10000 && iter < opt_niter);
+ 
++	// [ARTICLE-8] summary line, in the format of the campaign program
++	std::printf("### final pass %d  errorpose(m, rad) %.6g %.6g %.6g %.6g %.6g %.6g  |e|^2 %.6g  lambda %.6g  mu %.6g  "
++		"|Tc| %.6g\n",
++		iter - 1, errorpose[0], errorpose[1], errorpose[2], errorpose[3], errorpose[4], errorpose[5],
++		normeError, lambda, mu, std::sqrt(v.sumSquare()));
++
+ 	v = 0;
+ 	robot.setVelocity(vpRobot::CAMERA_FRAME, v);
+ 
+@@ -747,7 +893,9 @@
+ 		for (unsigned int j = bord; j < I.getWidth() - bord; j++)
+ 		{
+ 			double x = 0, y = 0;
+-			vpPixelMeterConversion::convertPoint(cam, i, j, y, x);
++			// [ARTICLE-4] corrected: x from the column j, y from the row i
++			if (opt_pixelOrder == 1) vpPixelMeterConversion::convertPoint(cam, j, i, x, y);
++			else vpPixelMeterConversion::convertPoint(cam, i, j, y, x);   // thesis
+ 
+ 			vvx[i][j] = (dIx.getValue(i, j)) * (1 / Z);
+ 			vvy[i][j] = (dIy.getValue(i, j)) * (1 / Z);
+@@ -787,7 +935,9 @@
+ 		for (unsigned int j = bord; j < I.getWidth() - bord; j++)
+ 		{
+ 			double x = 0, y = 0;
+-			vpPixelMeterConversion::convertPoint(cam, i, j, y, x);
++			// [ARTICLE-4] corrected: x from the column j, y from the row i
++			if (opt_pixelOrder == 1) vpPixelMeterConversion::convertPoint(cam, j, i, x, y);
++			else vpPixelMeterConversion::convertPoint(cam, i, j, y, x);   // thesis
+ 
+ 			dvvx[i][j] = (ddIx.getValue(i, j)) * (1 / Z);
+ 			dvvy[i][j] = (ddIy.getValue(i, j)) * (1 / Z);
+@@ -857,7 +1007,14 @@
+ 	for (unsigned int k = 0; k < nbIn; k++) {
+ 		const unsigned int i = bord + k / wIn;
+ 		const unsigned int j = bord + k % wIn;
+-		structG[k] = std::sqrt(w_h[i][j] * w_h[i][j] + w_v[i][j] * w_v[i][j] + w_d[i][j] * w_d[i][j]);
++		// [ARTICLE-5] first-order kernels (DC-free), as Chapter 4 defines G (4.11);
++		// the thesis file used the summed kernels w_h, w_v, w_d (-G 0)
++		if (opt_firstOrderG)
++			structG[k] = std::sqrt(g10_2[i][j] * g10_2[i][j] + g01_2[i][j] * g01_2[i][j] +
++				g10_3[i][j] * g10_3[i][j] + g01_3[i][j] * g01_3[i][j] +
++				g10_4[i][j] * g10_4[i][j] + g01_4[i][j] * g01_4[i][j]);
++		else
++			structG[k] = std::sqrt(w_h[i][j] * w_h[i][j] + w_v[i][j] * w_v[i][j] + w_d[i][j] * w_d[i][j]);
+ 		sumG += structG[k];
+ 	}
+ 
